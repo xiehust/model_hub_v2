@@ -7,3 +7,5 @@ transformers
 peft
 datasets
 trl>=0.8.6
+python-dotenv
+mysql-connector-python

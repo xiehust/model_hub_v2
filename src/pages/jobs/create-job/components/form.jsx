@@ -1,22 +1,23 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, Form, Header, SpaceBetween, Link } from '@cloudscape-design/components';
+import { Button, Form, Header, SpaceBetween, Badge } from '@cloudscape-design/components';
 import validateField from '../form-validation-config';
 import DistributionsPanel from './jobinfo-panel';
 import { remotePost } from '../../../../common/api-gateway';
 import { useNavigate } from "react-router-dom";
+import {LogsPanel} from './log-display';
+import {S3Path} from './output-path';
 
 // export const FormContext = React.createContext({});
 // export const useFormContext = () => React.useContext(FormContext);
 
-export function FormHeader({ loadHelpPanelContent }) {
+export function FormHeader({ readOnly,loadHelpPanelContent }) {
   return (
     <Header
       variant="h1"
-      description="Create a training job"
     >
-      Create Training Job
+      Job Detail
     </Header>
   );
 }
@@ -62,21 +63,26 @@ const defaultErrors = {
   job_type: null,
   job_name: null,
   dataset: null,
+  s3DataPath: null,
+  datasetInfo: null,
   training_stage: null,
   s3BucketSelectedOption: null,
   instance_num: null,
   instance_type: null
 };
 
+
 const fieldsToValidate = [
   'job_name',
   'job_type',
   'model_name',
   'dataset',
+  's3DataPath',
   'prompt_template',
   'training_stage',
   'instance_num',
-  'instance_type'
+  'instance_type',
+  'datasetInfo',
   // 's3BucketSelectedOption',
 ];
 
@@ -115,7 +121,9 @@ export const FormWithValidation = ({
     training_precision:useRef(null),
     max_samples:useRef(null),
     cutoff_length:useRef(null),
-    val_size:useRef(null)
+    val_size:useRef(null),
+    s3DataPath:useRef(null),
+    datasetInfo:useRef(null),
   };
   const onCancelClick =()=>
   {
@@ -135,7 +143,7 @@ export const FormWithValidation = ({
     });
     setErrors(newErrors);
     focusTopMostError(newErrors);
-    console.log(validatePass);
+    // console.log(validatePass);
     if (validatePass) {
       //submit 
       const formData = {
@@ -163,11 +171,13 @@ export const FormWithValidation = ({
           lora_rank:data.lora_rank,
           lora_alpha:data.lora_alpha,
           instance_type:data.instance_type,
-          instance_num:data.instance_num
+          instance_num:data.instance_num,
+          s3_data_path:data.s3DataPath,
+          dataset_info:data.datasetInfo
         },
     
       };
-      remotePost(formData, 'v1/create_job').
+      remotePost(formData, 'create_job').
         then(res => {
           setDisplayNotify(true);
           setNotificationData({ status: 'success', content: `Create job:${res.response_id}` });
@@ -219,6 +229,8 @@ export const FormWithValidation = ({
             refs={refs}
             readOnly={readOnly}
           />
+          {readOnly&&<S3Path outputPath={data?.output_s3_path} label={"Model Output S3 Path"}/>}
+          {readOnly&&<LogsPanel jobRunName={data?.job_run_name} jobStatus={data?.job_status} jobId={data?.job_id}/>}
         </SpaceBetween>
       }
       onSubmitClick={onSubmit}

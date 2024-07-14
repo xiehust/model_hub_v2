@@ -4,16 +4,23 @@ import sys
 sys.path.append('./')
 import json
 import logging
-import asyncio
+import os
 from typing import Annotated, Sequence, TypedDict, Dict, Optional,List, Any,TypedDict
-
-from model.data_model import CommonResponse,CreateJobsRequest, \
-ListJobsRequest,JobInfo,JobType,ListJobsResponse,GetJobsRequest, \
-JobsResponse,JobStatus,DelJobsRequest
+import dotenv
+dotenv.load_dotenv('.env')
+# assert dotenv.load_dotenv('.env') 
+# print(os.environ)
+# from backend.model.data_model import CommonResponse,CreateJobsRequest, \
+# ListJobsRequest,JobInfo,JobType,ListJobsResponse,GetJobsRequest, \
+# JobsResponse,JobStatus,DelJobsRequest
+from model.data_model import *
 from job_state_machine import JobStateMachine
 
 from db_management.database import DatabaseWrapper
 import threading
+from logger_config import setup_logger
+
+logger = setup_logger('main.py', log_file='processing_engine.log', level=logging.INFO)
 
 database = DatabaseWrapper()
 
@@ -22,25 +29,40 @@ def get_submitted_jobs():
     return [ret[0] for ret in results]
 
 def proccessing_job(job_id:str):
-    print("start process job:", job_id)
+    
+    logger.info("start process job:", job_id)
+    logger.info(f"creating job:{job_id}")
     job = JobStateMachine.create(job_id)
-    job.transition(JobStatus.CREATING)
-    job.transition(JobStatus.RUNNING)
-    print("finish process job:", job_id)
+
+    if not job.transition(JobStatus.CREATING):
+        job.transition(JobStatus.ERROR)
+        logger.info(f"CREATING job failed:{job_id}")
+        return 
+    
+    logger.info(f"running job:{job_id}")
+    if not job.transition(JobStatus.RUNNING):
+        job.transition(JobStatus.ERROR)
+        logger.info(f"RUNNING job failed:{job_id}")
+        return 
+
+    logger.info(f"finish running job:{job_id}")
+    job.transition(JobStatus.SUCCESS)
     return True
 
-if __name__ == '__main__':
+def start_processing_engine():
+    logger.info("start processing engine...")
     processing_threads = {}
     while True:
         results = get_submitted_jobs()
-        print("scan job list:",results)
+        if results:
+            logger.info(f"scan job list:{results}")
         if results:
             for job_id in results:
                 if job_id not in processing_threads:
                     thread = threading.Thread(target=proccessing_job,args=(job_id,))
                     thread.start()
                     processing_threads[job_id]=thread
-        
         time.sleep(10)# 每10s扫描一次
-
         
+if __name__ == '__main__':
+    start_processing_engine()

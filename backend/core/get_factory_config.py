@@ -44,6 +44,9 @@ def list_datasets(dataset_dir: str = None, training_stage: str = list(TRAINING_S
     ranking = TRAINING_STAGES[training_stage] in STAGES_USE_PAIR_DATA
     datasets = [k for k, v in dataset_info.items() if v.get("ranking", False) == ranking]
     return datasets  
+
+def get_model_path_by_name(name:str) -> str:
+    return SUPPORTED_MODELS[name]['hf']
             
 async def get_factory_config(request:GetFactoryConfigRequest) ->CommonResponse:
     if request.config_name == 'model_name':

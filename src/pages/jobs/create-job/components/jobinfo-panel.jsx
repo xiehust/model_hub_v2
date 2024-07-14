@@ -12,11 +12,15 @@ import {
   SpaceBetween,
   Select,
   Grid,
+  Box,
   Multiselect,
+  Textarea,
 } from '@cloudscape-design/components';
 import { FT_OPTIONS, QUANT_OPTIONS, TRAINING_STAGES, TRAINING_PRECISION,OPTMIZERS,INSTANCE_TYPES } from '../form-config';
 import validateField from '../form-validation-config';
 import { remotePost } from '../../../../common/api-gateway';
+import {S3Selector} from './output-path';
+import { JsonEditor } from './code-editor';
 
 
 function AdvancedConfigs({ onChange, readOnly, data,setData }) {
@@ -112,7 +116,7 @@ const SelectPromptTemplate = ({ data, setData, readOnly, refs }) => {
   }) => {
     setLoadStatus("loading");
     try {
-      const data = await remotePost({ config_name: 'prompt_template' }, 'v1/get_factory_config');
+      const data = await remotePost({ config_name: 'prompt_template' }, 'get_factory_config');
       const items = data.response.body.map((it) => ({
         prompt_template: it,
       }));
@@ -154,7 +158,7 @@ const SelectModelName = ({ data, setData, readOnly, refs }) => {
   }) => {
     setLoadStatus("loading");
     try {
-      const data = await remotePost({ config_name: 'model_name' }, 'v1/get_factory_config');
+      const data = await remotePost({ config_name: 'model_name' }, 'get_factory_config');
       const items = data.response.body.map((it) => ({
         model_name: it.model_name,
         model_path: it.model_path,
@@ -202,7 +206,7 @@ const SelectDatasets = ({ data, setData, readOnly, refs }) => {
   }) => {
     setLoadStatus("loading");
     try {
-      const data = await remotePost({ config_name: 'dataset' }, 'v1/get_factory_config');
+      const data = await remotePost({ config_name: 'dataset' }, 'get_factory_config');
       const items = data.response.body.map((it) => ({
         dataset: it,
       }));
@@ -331,15 +335,12 @@ export default function DistributionPanel({
     // Validates when there is an error message in the field
     if (validation && errors[attribute]?.length > 0) {
       const { errorText } = validateField(attribute, value);
-
-      // S3 bucket selection acts as server side validation
-      // so the error message is set only upon form submission and
-      // error message is resetted when a bucket is selected
-      if (isS3PermissionError(attribute, errorText)) {
-        setErrors({ [attribute]: '' });
-      } else {
-        setErrors({ [attribute]: errorText });
-      }
+      setErrors({ [attribute]: errorText });
+      // if (isS3PermissionError(attribute, errorText)) {
+      //   setErrors({ [attribute]: '' });
+      // } else {
+      //   setErrors({ [attribute]: errorText });
+      // }
     }
   };
 
@@ -360,7 +361,7 @@ export default function DistributionPanel({
   };
 
   return (
-    <SpaceBetween size="l" direction="vertical">
+    <SpaceBetween size="xl" direction="vertical">
       <Container
         header={<Header variant="h2">Training job settings</Header>}
       >
@@ -399,50 +400,7 @@ export default function DistributionPanel({
           >
             <SelectModelName data={data} setData={setData} readOnly={readOnly} refs={refs} />
           </FormField>
-          <FormField
-            label="Datesets"
-            stretch={false}
-            description="select open-source datasets from hf"
-            errorText={errors.dataset}
-            i18nStrings={{ errorIconAriaLabel: 'Error' }}
-          >
-            <SelectDatasets data={data} setData={setData} readOnly={readOnly} refs={refs} />
-          </FormField>
-          <Grid gridDefinition={[{ colspan: { "default": 4, xxs: 4 } }, { colspan: { "default": 4, xxs: 4 } },
-          ]}>
-            <FormField
-              label="Max samples"
-              description="Maximum samples per dataset."
-              stretch={false}
-            >
-              <Input readOnly={readOnly}
-                value={data.job_payload ? data.job_payload.max_samples : data.max_samples}
-                onChange={({ detail: { value } }) => onChange('max_samples', value)}
-              />
-            </FormField>
-            <FormField
-              label="Cutoff length"
-              description="Max tokens in input sequence."
-              stretch={false}
-            >
-              <Input readOnly={readOnly}
-                value={data.job_payload ? data.job_payload.cutoff_length : data.cutoff_length}
-                onChange={({ detail: { value } }) => onChange('cutoff_length', value)}
-              />
-            </FormField>
-          </Grid>
-          <Grid gridDefinition={[{ colspan: { "default": 4, xxs: 4 } }]}>
-            <FormField
-              label="Val size"
-              description="Proportion of data in the dev set."
-              stretch={false}
-            >
-              <Input readOnly={readOnly}
-                value={data.job_payload ? data.job_payload.val_size : data.val_size}
-                onChange={({ detail: { value } }) => onChange('val_size', value)}
-              />
-            </FormField>
-          </Grid>
+          
           <FormField
             label="Prompte Template"
             description="select a Prompt Template to format the dataset"
@@ -479,6 +437,81 @@ export default function DistributionPanel({
         </SpaceBetween>
       </Container>
       <Container
+        header={<Header variant="h2">Datasets settings</Header>}
+      >
+        <SpaceBetween size="l">
+        <FormField
+            label="Training Data in S3"
+            stretch={false}
+            description="Input the S3 path of your own dataset"
+            errorText={errors.s3DataPath}
+            i18nStrings={{ errorIconAriaLabel: 'Error' }}
+          >
+            <S3Selector label={"S3 Data Path"} 
+                    objectsIsItemDisabled={(item) => !item.IsFolder}
+                    setOutputPath={(value)=> setData({ s3DataPath:value})} 
+                  outputPath={data.job_payload?.s3_data_path|| data.s3DataPath}/>
+          </FormField>
+          {(data.job_payload?.s3_data_path|| data.s3DataPath) &&
+          <FormField
+              label="Dataset Info"
+              description="Need to prepare a data set info in Json format. For example"
+              stretch={false}
+            >
+                <JsonEditor 
+                readOnly={readOnly}
+                value={data.job_payload?.dataset_info || data.datasetInfo}
+                onDelayedChange={(event) => onChange('datasetInfo', event.detail.value)}
+                />
+          </FormField>}
+
+         <FormField
+            label="Public Datesets"
+            stretch={false}
+            description="select open-source datasets from hf"
+            errorText={errors.dataset}
+            i18nStrings={{ errorIconAriaLabel: 'Error' }}
+          >
+            <SelectDatasets data={data} setData={setData} readOnly={readOnly} refs={refs} />
+          </FormField>
+        <Grid gridDefinition={[{ colspan: { "default": 4, xxs: 4 } }, { colspan: { "default": 4, xxs: 4 } },
+          ]}>
+            <FormField
+              label="Max samples"
+              description="Maximum samples per dataset."
+              stretch={false}
+            >
+              <Input readOnly={readOnly}
+                value={data.job_payload ? data.job_payload.max_samples : data.max_samples}
+                onChange={({ detail: { value } }) => onChange('max_samples', value)}
+              />
+            </FormField>
+            <FormField
+              label="Cutoff length"
+              description="Max tokens in input sequence."
+              stretch={false}
+            >
+              <Input readOnly={readOnly}
+                value={data.job_payload ? data.job_payload.cutoff_length : data.cutoff_length}
+                onChange={({ detail: { value } }) => onChange('cutoff_length', value)}
+              />
+            </FormField>
+          </Grid>
+          <Grid gridDefinition={[{ colspan: { "default": 4, xxs: 4 } }]}>
+            <FormField
+              label="Val size"
+              description="Proportion of data in the dev set."
+              stretch={false}
+            >
+              <Input readOnly={readOnly}
+                value={data.job_payload ? data.job_payload.val_size : data.val_size}
+                onChange={({ detail: { value } }) => onChange('val_size', value)}
+              />
+            </FormField>
+          </Grid>
+        </SpaceBetween>
+      </Container>
+      <Container
         header={<Header variant="h2">Training Instances settings</Header>}
       >
         <SpaceBetween size="l">
@@ -510,6 +543,7 @@ export default function DistributionPanel({
       <Container header={<Header variant="h2">Hyper params settings</Header>}
         footer={<AdvancedConfigs data={data} onChange={onChange} readOnly={readOnly} setData={setData}/>}
       >
+        <SpaceBetween size="l">
         <Grid gridDefinition={[{ colspan: { "default": 6, xxs: 4 } }, { colspan: { "default": 6, xxs: 4 } }]}>
           <FormField
             label="Learning rate"
@@ -563,6 +597,7 @@ export default function DistributionPanel({
             <SelectTrainingPrecision data={data} readOnly={readOnly} setData={setData} />
           </FormField>
         </Grid>
+        </SpaceBetween>
       </Container>
     </SpaceBetween>
   );

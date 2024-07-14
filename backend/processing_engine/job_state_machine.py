@@ -7,23 +7,32 @@ import logging
 import asyncio
 from typing import Annotated, Sequence, TypedDict, Dict, Optional,List, Any,TypedDict
 
-from model.data_model import CommonResponse,CreateJobsRequest, \
-ListJobsRequest,JobInfo,JobType,ListJobsResponse,GetJobsRequest, \
-JobsResponse,JobStatus
+from model.data_model import JobInfo,JobType, JobStatus
 from pydantic import BaseModel,Field
 from db_management.database import DatabaseWrapper
-
-
+from logger_config import setup_logger
+from training.training_job import TrainingJobExcutor
+from datetime import datetime
 logger = logging.getLogger()
 
-logger.setLevel(logging.INFO)
-    
+logger = setup_logger('job_state_machine.py', log_file='processing_engine.log', level=logging.INFO)
+
+dummy_datasetinfo = {'ruozhiba':{
+                        'file_name':'ruozhiba.json',
+                        "columns": {
+                        "prompt": "instruction",
+                        "query": "input",
+                        "response": "output",
+                }   
+}}
     
 class JobStateMachine(BaseModel):
     job_status: JobStatus = JobStatus.SUBMITTED
     job_id: str = ""
     handlers : Dict[JobStatus,Any] = None
     database : Any = None
+    train_job_exe : TrainingJobExcutor = None
+    
     
     @classmethod
     def create(cls, job_id: str):
@@ -42,39 +51,52 @@ class JobStateMachine(BaseModel):
         })
     
     def submit_handler(self) ->bool:
-        print(f"Job {self.job_id} submitted.")
+        logger.info(f"Job {self.job_id} submitted.")
         return True
 
     def run_handler(self) ->bool:
-        print(f"Job {self.job_id} running.")
+        logger.info(f"Job {self.job_id} running.")
+        self.database.update_job_start_time(self.job_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        if self.train_job_exe is None:
+            logger.error(f"Job {self.job_id} has no training job executor.")
+            return False
+        self.train_job_exe.run()
         return True
 
     def success_handler(self) ->bool:
-        print(f"Job {self.job_id} success.")
+        logger.info(f"Job {self.job_id} success.")
+        self.database.update_job_end_time(self.job_id,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         return True
         
+    # create training job
     def creating_handler(self) ->bool:
-        print(f"Job {self.job_id} creating.")
-        return True
+        logger.info(f"Job {self.job_id} creating.")
+        self.train_job_exe = TrainingJobExcutor(job_id=self.job_id)
+        ret = self.train_job_exe.create()
+        return ret
 
     def error_handler(self) ->bool:
-        print(f"Job {self.job_id} error.")
+        logger.info(f"Job {self.job_id} error.")
+        self.database.update_job_end_time(self.job_id,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         return True
 
     def stop_handler(self) ->bool:
-        print(f"Job {self.job_id} stopped.")
+        logger.info(f"Job {self.job_id} stopped.")
+        self.database.update_job_end_time(self.job_id,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         return True
         
     def pending_handler(self) ->bool:
-        print(f"Job {self.job_id} pending.")
+        logger.info(f"Job {self.job_id} pending.")
         return True
         
     def terminated_handler(self) ->bool:
-        print(f"Job {self.job_id} terminated.")
+        logger.info(f"Job {self.job_id} terminated.")
+        self.database.update_job_end_time(self.job_id,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         return True
         
     def terminating_handler(self) ->bool:
-        print(f"Job {self.job_id} terminating.")
+        logger.info(f"Job {self.job_id} terminating.")
+        self.database.update_job_end_time(self.job_id,datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         return True
         
         
@@ -86,7 +108,7 @@ class JobStateMachine(BaseModel):
         ret = self.handlers[new_status](self)
         # rollback to previous status
         if not ret and rollback:
-            print('rolling back to previous state')
+            logger.info('rolling back to previous state')
             self.job_status = old_status
             self.database.set_job_status(self.job_id, old_status)
         return ret

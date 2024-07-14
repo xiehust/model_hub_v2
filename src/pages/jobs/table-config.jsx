@@ -42,7 +42,7 @@ const rawColumns = [
     sortingField: 'type',
     cell: item => item.job_type,
     header: 'Type',
-    minWidth: 160,
+    minWidth: 40,
     isRowHeader: true,
   },
   {
@@ -50,51 +50,83 @@ const rawColumns = [
     sortingField: 'name',
     cell: item => item.job_name,
     header: 'Name',
+    minWidth: 50,
+    isRowHeader: true,
+  },
+  {
+    id: 'sm_name',
+    sortingField: 'name',
+    cell: item => item.job_run_name,
+    header: 'SM Job Name',
     minWidth: 160,
     isRowHeader: true,
   },
   {
     id: 'create_time',
     sortingField: 'create_time',
-    cell: item => formatDateTime(item.job_create_time),
+    // cell: item => formatDateTime(item.job_create_time),
+    cell: item => item.job_create_time,
     header: 'Create Time',
-    minWidth: 160,
+    minWidth: 120,
     isRowHeader: true,
   },
   {
     id: 'start_time',
     sortingField: 'start_time',
-    cell: item => formatDateTime(item.job_start_time),
+    // cell: item => formatDateTime(item.job_start_time),
+    cell: item => item.job_start_time,
     header: 'Start Time',
-    minWidth: 160,
+    minWidth: 120,
     isRowHeader: true,
   },
   {
     id: 'end_time',
     sortingField: 'end_time',
-    cell: item => formatDateTime(item.job_end_time),
+    // cell: item => formatDateTime(item.job_end_time),
+    cell: item => item.job_end_time,
     header: 'End Time',
-    minWidth: 160,
+    minWidth: 120,
     isRowHeader: true,
   },
   {
-    id: 'actions',
-    header: 'Actions',
-    minWidth: 100,
-    cell: item => (
-      <ButtonDropdown
-        variant="inline-icon"
-        ariaLabel={`${item.id} actions`}
-        expandToViewport={true}
-        items={[
-          { id: 'view', text: 'View details' },
-          { id: 'edit', text: 'Edit' },
-          { id: 'delete', text: 'Delete' },
-        ]}
-      />
-    ),
+    id: 'output_s3_path',
+    sortingField: 'output_s3_path',
+    cell: item => item.output_s3_path,
+    header: 'Output S3 Path',
+    minWidth: 160,
+    isRowHeader: true,
   },
+  // {
+  //   id: 'actions',
+  //   header: 'Actions',
+  //   minWidth: 100,
+  //   cell: item => (
+  //     <ButtonDropdown
+  //       variant="inline-icon"
+  //       ariaLabel={`${item.id} actions`}
+  //       expandToViewport={true}
+  //       items={[
+  //         { id: 'view', text: 'View details' },
+  //         { id: 'edit', text: 'Edit' },
+  //         { id: 'delete', text: 'Delete' },
+  //       ]}
+  //     />
+  //   ),
+  // },
 ];
+
+
+export const JOB_STATE = {
+  PENDING : "PENDING",
+  SUBMITTED : "SUBMITTED",
+  CREATING : "CREATING",
+  RUNNING : "RUNNING",
+  SUCCESS : "SUCCESS",
+  ERROR : "ERROR",
+  TERMINATED : "TERMINATED",
+  TERMINATING : "TERMINATING",
+  STOPPED : "STOPPED"
+}
 
 export const COLUMN_DEFINITIONS = rawColumns.map(column => ({ ...column, ariaLabel: createTableSortLabelFn(column) }));
 
@@ -224,10 +256,13 @@ const CONTENT_DISPLAY_OPTIONS = [
   { id: 'state', label: 'State' },
   { id: 'type', label: 'Type' },
   { id: 'name', label: 'Name' },
+  { id: 'sm_name', label: 'SM Job Name' },
   { id: 'create_time', label: 'Create Time' },
   { id: 'start_time', label: 'Start Time' },
   { id: 'end_time', label: 'End Time' },
-  { id: 'actions', label: 'Actions' },
+  { id: 'output_s3_path', label: 'Output S3 Path' },
+  // { id: 'actions', label: 'Actions' },
+
 ];
 
 export const PAGE_SIZE_OPTIONS = [
@@ -242,11 +277,12 @@ export const DEFAULT_PREFERENCES = {
     { id: 'id', visible: true },
     { id: 'state', visible: true },
     { id: 'name', visible: true },
+    { id: 'sm_name', visible: true },
     { id: 'type', visible: true },
     { id: 'create_time', visible: true },
     { id: 'start_time', visible: false },
     { id: 'end_time', visible: false },
-    { id: 'actions', visible: true },
+    { id: 'output_s3_path', visible: true }
   ],
   wrapLines: false,
   stripedRows: false,

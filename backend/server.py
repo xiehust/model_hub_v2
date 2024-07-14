@@ -1,10 +1,10 @@
 import argparse
 import json
-import logging
 import os
 from typing import Generator, Optional, Union, Dict, List, Any
-
-
+from logger_config import setup_logger
+import logging
+import dotenv
 import fastapi
 from fastapi import Depends, HTTPException
 from fastapi.exceptions import RequestValidationError
@@ -19,28 +19,39 @@ import uvicorn
 import time
 import uuid
 from pydantic import BaseModel,Field
-from model.data_model import CommonResponse,CreateJobsRequest,ListJobsRequest,GetFactoryConfigRequest,GetJobsRequest,DelJobsRequest
+from model.data_model import CommonResponse,CreateJobsRequest \
+    ,ListJobsRequest,GetFactoryConfigRequest,GetJobsRequest \
+        ,DelJobsRequest,FetchLogRequest,ListS3ObjectsRequest\
+            ,S3ObjectsResponse
 
-from core.jobs import create_job,list_jobs,get_job_by_id,delete_job_by_id
+from core.jobs import create_job,list_jobs,get_job_by_id,delete_job_by_id,fetch_training_log,get_job_status
 from core.get_factory_config import get_factory_config
+from core.outputs import list_s3_objects
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(filename=__file__, level=logging.INFO,
-                    format='[%(asctime)s %(levelname)s] %(message)s',
-                    datefmt='%Y-%d-%m %H:%M:%S', encoding="utf-8")
+dotenv.load_dotenv()
+logger = setup_logger('server.py', log_file='server.log', level=logging.INFO)
+
 
 class AppSettings(BaseSettings):
     # The address of the model controller.
     api_keys: Optional[List[str]] = None
 
 
-app_settings = AppSettings()
+app_settings = AppSettings(api_keys=os.environ['api_keys'].split(','))
 app = fastapi.FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
 headers = {"User-Agent": "Chat Server"}
 get_bearer_token = HTTPBearer(auto_error=False)
 async def check_api_key(
     auth: Optional[HTTPAuthorizationCredentials] = Depends(get_bearer_token),
 ) -> str:
+    # print(app_settings.api_keys)
     if app_settings.api_keys:
         if auth is None or (token := auth.credentials) not in app_settings.api_keys:
             raise HTTPException(
@@ -94,7 +105,7 @@ async def ping():
 
 @app.post("/v1/list_jobs",dependencies=[Depends(check_api_key)])
 async def handel_list_jobs(request:ListJobsRequest):
-    print(request.json())
+    logger.info(request.json())
     resp = await list_jobs(request)
     return resp
 
@@ -117,22 +128,47 @@ async def delete_job(request:DelJobsRequest):
 @app.post("/v1/create_job",dependencies=[Depends(check_api_key)])
 async def handle_create_job(request: CreateJobsRequest):
     request_timestamp = time.time()  
-    print(request.json())
+    logger.debug(request.json())
     job_detail = await create_job(request)
-    body = {
-        'statusCode': 200,
-        'headers': {'Content-Type': 'application/json'},
-        'body': job_detail
-    }
+    if job_detail:
+        body = {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json'},
+            'body': job_detail
+        }
+        return CommonResponse(response=body,response_id=str(uuid.uuid4()))
+    else:
+        body = {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json'},
+            'body': 'create job failed'
+        }
+        return CommonResponse(response=body,response_id=str(uuid.uuid4()))
     
-    return CommonResponse(response=body,response_id=str(uuid.uuid4()))
+@app.post("/v1/fetch_training_log",dependencies=[Depends(check_api_key)])
+async def handle_fetch_training_log(request:FetchLogRequest):
+    resp = await fetch_training_log(request)
+    return resp
+
+
+@app.post("/v1/get_job_status",dependencies=[Depends(check_api_key)])
+async def handle_get_job_status(request:GetJobsRequest):
+    resp = get_job_status(request.job_id)
+    return resp
+
+@app.post("/v1/list_s3_path",dependencies=[Depends(check_api_key)])
+async def handle_list_s3_path(request:ListS3ObjectsRequest):
+    ret = list_s3_objects(request.output_s3_path)
+    return S3ObjectsResponse(response_id=str(uuid.uuid4()),objects=ret)
+    
 
 def create_price_api_server():
+    global app_settings
     parser = argparse.ArgumentParser(
         description="Chat RESTful API server."
     )
-    parser.add_argument("--host", type=str, default="localhost", help="host name")
-    parser.add_argument("--port", type=int, default=8001, help="port number")
+    parser.add_argument("--host", type=str, default="0.0.0.0", help="host name")
+    parser.add_argument("--port", type=int, default=8000, help="port number")
     parser.add_argument(
         "--allow-credentials", action="store_true", help="allow credentials"
     )
@@ -145,11 +181,11 @@ def create_price_api_server():
     parser.add_argument(
         "--allowed-headers", type=json.loads, default=["*"], help="allowed headers"
     )
-    parser.add_argument(
-        "--api-keys",
-        type=lambda s: s.split(","),
-        help="Optional list of comma separated API keys",
-    )
+    # parser.add_argument(
+    #     "--api-keys",
+    #     type=lambda s: s.split(","),
+    #     help="Optional list of comma separated API keys",
+    # )
     parser.add_argument(
         "--ssl",
         action="store_true",
@@ -159,24 +195,25 @@ def create_price_api_server():
     )
     args = parser.parse_args()
 
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=args.allowed_origins,
-        allow_credentials=args.allow_credentials,
-        allow_methods=args.allowed_methods,
-        allow_headers=args.allowed_headers,
-    )
-    app_settings.api_keys = args.api_keys
+    # app.add_middleware(
+    #     CORSMiddleware,
+    #     allow_origins=args.allowed_origins,
+    #     allow_credentials=args.allow_credentials,
+    #     allow_methods=args.allowed_methods,
+    #     allow_headers=args.allowed_headers,
+    # )
+    # app_settings.api_keys = args.api_keys
 
-    logger.info(f"{args}")
+    
     return args
 
 if __name__ == "__main__":
     logger.info('server start')
     args = create_price_api_server()
+    logger.info(f"{args}")
     if args.ssl:
         uvicorn.run(
-            app,
+            "server:app",
             host=args.host,
             port=args.port,
             log_level="info",
@@ -184,4 +221,4 @@ if __name__ == "__main__":
             ssl_certfile=os.environ["SSL_CERTFILE"],
         )
     else:
-        uvicorn.run(app, host=args.host, port=args.port, log_level="info")
+        uvicorn.run("server:app", host=args.host, port=args.port, log_level="info",reload=True,workers=1)

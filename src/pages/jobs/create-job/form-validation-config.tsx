@@ -17,43 +17,12 @@ type FormDataAttributes =
 
 const validateEmpty = (value: string | undefined | null | File[]) => Boolean(value && value.length > 0);
 
-const validateURLPrefix = (value: string) => value.startsWith('https://') || value.startsWith('http://');
-
-const validateURLFormat = (value: string) => {
-  const urlFormatRegex = new RegExp(/^([a-zA-Z0-9]{1,63}\.)+[a-zA-Z]{2,}$/);
-  // strip valid url prefixes
-  let url = value;
-  url = url.replace('http://', '');
-  url = url.replace('https://', '');
-
-  return urlFormatRegex.test(url);
-};
-
-const validateCNAMEs = (value: string) => {
-  if (!value) {
-    return true;
-  }
-
-  const CNAMEs = value.split(',');
-  return CNAMEs?.length < 4;
-};
-const validateFileSize = (file: File) => file.size <= 500;
 
 const validateS3Bucket = (value: string) => {
   return !value.includes('NO-ACCESS');
 };
 
-const URLSpecialCharacterRegex = new RegExp(/[^A-Za-z0-9:/.]/gm);
-const originIdSpecialCharacterRegex = new RegExp(/[^A-Za-z0-9-.]/gm);
-const validateSpecialCharacter = (value: string, regex: RegExp) => {
-  const isValid = !regex.test(value);
 
-  return isValid;
-};
-const getSpecialCharacters = (value: string, regex: RegExp) => {
-  const specialCharacters = value.match(regex);
-  return uniq(specialCharacters);
-};
 
 
 const validateNumers = (value: string) => {
@@ -62,8 +31,6 @@ const validateNumers = (value: string) => {
   return isValid;
 };
 
-const validateEmptyCharacter = (value: string) => !value?.includes(' ');
-const validateCodeEditor = (value: string | undefined | null) => Boolean(!value || value.length === 0);
 
 type ValidationFunction = (value: any) => boolean;
 type ValidationText = string | ((value: string) => string);
@@ -77,11 +44,12 @@ const validationConfig: Record<
   prompt_template: [{ validate: validateEmpty, errorText: 'Prompt template name is required.' }],
   job_type: [{ validate: validateEmpty, errorText: 'Finetune type is required.' }],
   dataset:[{ validate: validateEmpty, errorText: 'Dataset is required.' }],
+  datasetInfo:[{ validate: validateEmpty, errorText: 'DatasetInfo is required.' }],
   training_stage: [{ validate: validateEmpty, errorText: 'Training Stage type is required.' }],
   instance_type: [{ validate: validateEmpty, errorText: 'Instance type is required.' }],
-  instance_num: [//{ validate: validateEmpty, errorText: 'Instance amount is required.' },
-    {validate:validateNumers,errorText: 'Only integer is supported.' }
-  ],
+  // instance_num: [{ validate: validateEmpty, errorText: 'Instance amount is required.' },
+  //   {validate:validateNumers,errorText: 'Only integer is supported.' }
+  // ],
   s3BucketSelectedOption: [
     {
       validate: (selectedOption: SelectProps.Option) => validateEmpty(selectedOption?.value),

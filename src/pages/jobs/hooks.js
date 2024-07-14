@@ -43,7 +43,7 @@ export function useDistributions(params = {}) {
       "page_size":pageSize,
       "page_index":currentPageIndex
     }
-    remotePost(params,'v1/list_jobs').then((res) => {
+    remotePost(params,'list_jobs').then((res) => {
       console.log(res);  
       callback({items:res.jobs,totalCount:res.total_count});
     }).catch((error) => {

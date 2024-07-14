@@ -29,7 +29,7 @@ const JobDetailApp =() => {
 
   useEffect(()=>{
     const controller = new AbortController();
-    remotePost({"job_id":id},'v1/get_job')
+    remotePost({"job_id":id},'get_job')
         .then((res)=>{
             console.log(res.body);
             _setData(res.body);
@@ -53,7 +53,7 @@ const JobDetailApp =() => {
           readOnly={true}
           data={data}
           _setData={_setData}
-          header={<FormHeader loadHelpPanelContent={loadHelpPanelContent} />}
+          header={<FormHeader readOnly={true} loadHelpPanelContent={loadHelpPanelContent} />}
         />
       }
       breadcrumbs={<Breadcrumbs items={createjobBreadcrumbs}/>}

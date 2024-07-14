@@ -13,6 +13,7 @@ interface FullPageHeaderProps extends HeaderProps {
   setNotificationData: (value: any) => void;
   onInfoLinkClick?: () => void;
   onDelete?: () => void;
+  onRefresh?: () => void;
 }
 
 export function FullPageHeader({
@@ -25,6 +26,7 @@ export function FullPageHeader({
   setNotificationData,
   onInfoLinkClick,
   onDelete,
+  onRefresh,
   ...props
 }: FullPageHeaderProps) {
   const isOnlyOneSelected = selectedItemsCount === 1;
@@ -36,8 +38,8 @@ export function FullPageHeader({
       actions={
         <SpaceBetween size="xs" direction="horizontal">
           {extraActions}
-          <Button data-testid="header-btn-view-details" disabled={!isOnlyOneSelected}>
-            View details
+          <Button data-testid="header-btn-refresh" iconName="refresh"  onClick={onRefresh}>
+            Refresh
           </Button>
           <Button data-testid="header-btn-edit" disabled={!isOnlyOneSelected}>
             Edit

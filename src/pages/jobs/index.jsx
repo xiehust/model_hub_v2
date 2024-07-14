@@ -32,7 +32,7 @@ function ServerSideTable({
   setNotificationData,
 }) {
   const [selectedItems, setSelectedItems] = useState([]);
-  const [preferences, setPreferences] = useLocalStorage('React-ServerSideTable-Preferences', DEFAULT_PREFERENCES);
+  const [preferences, setPreferences] = useLocalStorage('ModelHub-JobTable-Preferences', DEFAULT_PREFERENCES);
   const [descendingSorting, setDescendingSorting] = useState(false);
   const [currentPageIndex, setCurrentPageIndex] = useState(1);
   const [filteringText, setFilteringText] = useState('');
@@ -71,11 +71,11 @@ function ServerSideTable({
   };
 
   const onDelete = () => {
-    if (selectedItems[0].job_status !== 'SUBMITTED'){
+    if (selectedItems[0].job_status === 'RUNNING' || selectedItems[0].job_status === 'SUCCESS'){
       setDisplayNotify(true);
       setNotificationData({ status: 'warning', content: `Only job in 'SUBMITTED' status can be deleted` });
     }else{
-      remotePost({job_id:selectedItems[0].job_id},'v1/delete_job').then(res=>{
+      remotePost({job_id:selectedItems[0].job_id},'delete_job').then(res=>{
         console.log(res);
         if (res.response.code === 'SUCCESS'){
           setDisplayNotify(true);
@@ -91,6 +91,10 @@ function ServerSideTable({
         setNotificationData({ status: 'error', content: `Error deleting job id ${selectedItems[0].job_id}` });
       })
     }
+  };
+
+  const onRefresh = () => {
+    setRefresh((prev)=>!prev);
   };
 
 
@@ -126,6 +130,7 @@ function ServerSideTable({
           setDisplayNotify = {setDisplayNotify}
           counter={!loading && getHeaderCounterServerSideText(totalCount, selectedItems.length)}
           onInfoLinkClick={loadHelpPanelContent}
+          onRefresh={onRefresh}
         />
       }
       loadingText="Loading"

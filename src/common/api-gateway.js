@@ -6,7 +6,6 @@ console.log(process.env)
 export const API_ENDPOINT= process.env.REACT_APP_API_ENDPOINT;
 export const API_KEY = process.env.REACT_APP_API_KEY;
 
-
 export const remotePost = async(formdata,path) =>{
     console.log('api:',`${API_ENDPOINT}/${path}`)
     const headers = {'Content-Type': 'application/json', 
@@ -14,7 +13,13 @@ export const remotePost = async(formdata,path) =>{
         };
     try {
         const resp = await axios.post(`${API_ENDPOINT}/${path}`,JSON.stringify(formdata), {headers});
-        return resp.data;
+        if (resp.statusText === 'OK'){
+            return resp.data
+        } else{
+            console.log(`Server error:${resp.status}`)
+            throw `Server error:${resp.status}`;
+        }
+
     } catch (err) {
         throw err;
     }
