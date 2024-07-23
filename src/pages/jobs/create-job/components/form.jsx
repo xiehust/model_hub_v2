@@ -65,10 +65,11 @@ const defaultErrors = {
   dataset: null,
   s3DataPath: null,
   datasetInfo: null,
-  training_stage: null,
-  s3BucketSelectedOption: null,
+  stage: null,
+  // s3BucketSelectedOption: null,
   instance_num: null,
-  instance_type: null
+  instance_type: null,
+  booster_option:null,
 };
 
 
@@ -108,22 +109,24 @@ export const FormWithValidation = ({
     dataset: useRef(null),
     model_name: useRef(null),
     quant_type: useRef(null),
-    training_stage: useRef(null),
-    s3BucketSelectedOption: useRef(null),
+    stage: useRef(null),
+    // s3BucketSelectedOption: useRef(null),
     instance_type:useRef(null),
     instance_num:useRef(null),
     prompt_template:useRef(null),
     finetuning_method:useRef(null),
     learning_rate:useRef(null),
-    batch_size:useRef(null),
-    grad_accu:useRef(null),
-    epoch:useRef(null),
+    per_device_train_batch_size:useRef(null),
+    gradient_accumulation_steps:useRef(null),
+    num_train_epochs:useRef(null),
     training_precision:useRef(null),
     max_samples:useRef(null),
-    cutoff_length:useRef(null),
+    cutoff_len:useRef(null),
     val_size:useRef(null),
     s3DataPath:useRef(null),
     datasetInfo:useRef(null),
+    booster_option:useRef(null),
+    deepspeed:useRef(null)
   };
   const onCancelClick =()=>
   {
@@ -148,21 +151,21 @@ export const FormWithValidation = ({
       //submit 
       const formData = {
         job_name: data.job_name,
-        job_type: data.training_stage,
+        job_type: data.stage,
         job_payload:{
           model_name: data.model_name,
           dataset: data.dataset,
           prompt_template: data.prompt_template,
-          training_stage: data.training_stage,
-          quant_type: data.quant_type,
+          stage: data.stage,
+          quantization_bit: data.quantization_bit,
           finetuning_method:data.finetuning_method,
           learning_rate:data.learning_rate,
-          batch_size:data.batch_size,
-          grad_accu:data.grad_accu,
-          epoch:data.epoch,
+          per_device_train_batch_size:data.per_device_train_batch_size,
+          gradient_accumulation_steps:data.gradient_accumulation_steps,
+          num_train_epochs:data.num_train_epochs,
           training_precision:data.training_precision,
           max_samples:data.max_samples,
-          cutoff_length:data.cutoff_length,
+          cutoff_len:data.cutoff_len,
           val_size:data.val_size,
           logging_steps:data.logging_steps,
           warmup_steps:data.warmup_steps,
@@ -173,7 +176,14 @@ export const FormWithValidation = ({
           instance_type:data.instance_type,
           instance_num:data.instance_num,
           s3_data_path:data.s3DataPath,
-          dataset_info:data.datasetInfo
+          dataset_info:data.datasetInfo,
+          booster_option:data.booster_option,
+          deepspeed:data.deepspeed,
+          // lora_dropout:data.lora_dropout,
+          // lora_bias:data.lora_bias,
+          // lora_module_name:data.lora_module_name,
+          // lora_target_modules:data.lora_target_modules,
+          // lora_target_modules_type:data.lora_target_modules_type,
         },
     
       };

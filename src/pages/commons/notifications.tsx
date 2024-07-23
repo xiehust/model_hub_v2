@@ -5,7 +5,7 @@ import Flashbar, { FlashbarProps } from '@cloudscape-design/components/flashbar'
 import { useDisclaimerFlashbarItem } from './disclaimer-flashbar-item';
 
 
-interface notificationItemProps {
+export interface notificationItemProps {
   status: FlashbarProps.Type;
   content: string;
 }
@@ -40,7 +40,7 @@ function useNotifications(showSuccessNotification = false, data : notificationIt
   return notifications;
 }
 
-interface NotificationsProps {
+export interface NotificationsProps {
   successNotification?: boolean;
   data:notificationItemProps;
 }

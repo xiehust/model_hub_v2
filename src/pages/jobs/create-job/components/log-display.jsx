@@ -11,7 +11,7 @@ import Badge from "@cloudscape-design/components/badge";
 import {JOB_STATE} from "../../table-config";
 const defaultRows = 20;
 const defaultMaxRows = 50;
-export const LogsPanel = ({jobRunName,jobStatus,jobId}) => {
+export const LogsPanel = ({jobRunName,jobId,jobStatus}) => {
     const [logs, setLogs] = useState(['Start running, please wait a few minutes...']);
     const [loading, setLoading] = useState(false);
     const [rows, setRows] = useState(defaultRows);
@@ -19,29 +19,67 @@ export const LogsPanel = ({jobRunName,jobStatus,jobId}) => {
     const [newJobStatus, setNewStatus] = useState(jobStatus);
     const intervalRef = useRef(null);
     const intervalRef2 = useRef(null);
+    const nextTokenRef = useRef(null);
+    // const [nextToken,setNextToken] = useState(null);
 
-    const fetchLogs = useCallback(() => {
-        setLoading(true);
-        const params = {"job_run_name": jobRunName};
-        //获取日志
-        remotePost(params, 'fetch_training_log').then((res) => {
-            setLoading(false);
-            if (res.log_events.length ){
-                setLogs(res.log_events);
-                setRows(res.log_events.length > defaultRows ?
-                    (res.log_events.length > defaultMaxRows ? defaultMaxRows : res.log_events.length) : defaultRows);
-            }
-
-        }).catch(err => {
-            setLoading(false);
-            setLogs(prev => [...prev, JSON.stringify(err)])
+    function sortEventsByTimestamp(events) {
+        return events.sort((a, b) => {
+            // 从每个字符串中提取时间戳
+            const timestampA = new Date(a.split(': ')[0]);
+            const timestampB = new Date(b.split(': ')[0]);
+            
+            // 比较时间戳
+            return timestampA - timestampB;
         });
-    }, [jobRunName]);
+    }
+
+    const fetchLogs = useCallback(async () => {
+        setLoading(true);
+        let params = {
+            "next_token": nextTokenRef.current,
+            'job_id':jobId};
+        let stop = false
+        while (!stop)
+            try {
+                const res = await remotePost(params, 'fetch_training_log');
+                setLoading(false);
+                console.log('logs:',res.next_forward_token);
+                stop = (res.next_forward_token === params.next_token)?true:false;
+                nextTokenRef.current = res.next_forward_token
+                params.next_token = res.next_forward_token;
+                if (res.log_events.length ){
+                    setLogs((prev) => prev.concat(sortEventsByTimestamp(res.log_events)));
+                    setRows(logs.length > defaultRows ?
+                        (logs.length > defaultMaxRows ? defaultMaxRows :logs.length) : defaultRows);
+                }
+            } catch(err){
+                setLoading(false);
+                stop = true;
+                setLogs(prev => [...prev, JSON.stringify(err)])
+            }
+ 
+            // remotePost(params, 'fetch_training_log').then((res) => {
+            //     setLoading(false);
+            //     console.log('logs:',res.next_forward_token);
+            //     nextTokenRef.current = res.next_forward_token
+            //     params.next_token = res.next_forward_token;
+            //     if (res.log_events.length ){
+            //         setLogs((prev) => prev.concat(sortEventsByTimestamp(res.log_events)));
+            //         setRows(logs.length > defaultRows ?
+            //             (logs.length > defaultMaxRows ? defaultMaxRows :logs.length) : defaultRows);
+            //     }
+    
+            // }).catch(err => {
+            //     setLoading(false);
+            //     setLogs(prev => [...prev, JSON.stringify(err)])
+            // });
+
+    }, [nextTokenRef.current]);
 
     useEffect(() => {
         fetchLogs();
-        //只有在RUNNING
-        if (newJobStatus === JOB_STATE.RUNNING){
+        //SUCCESS或者ERROR时停止刷新
+        if (newJobStatus !== JOB_STATE.SUCCESS || newJobStatus !== JOB_STATE.ERROR){
             intervalRef.current  = setInterval(fetchLogs, 10000);  // 每10秒刷新一次
             setStop(false)
         }
@@ -64,7 +102,7 @@ export const LogsPanel = ({jobRunName,jobStatus,jobId}) => {
         }).catch(err => {
             console.log(err);
         })
-    }, [jobRunName]);
+    }, []);
 
     useEffect(() => {
         fetchStatus()

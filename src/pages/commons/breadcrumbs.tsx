@@ -18,11 +18,25 @@ export const createjobBreadcrumbs = [
   },
 ];
 
+export const endpointsBreadcrumbs = [
+  {
+    text: 'Endpoints',
+    href: '/endpoints',
+  },
+];
+
+export const chatBreadcrumbs = [
+  {
+    text: 'Playground',
+    href: '/playground',
+  },
+];
+
 
 export function Breadcrumbs({ items }: { items: BreadcrumbGroupProps['items'] }) {
   return (
     <BreadcrumbGroup
-      items={[{ text: 'Model Hub', href: '#' }, ...items]}
+      items={[{ text: 'Model Hub', href: '/jobs' }, ...items]}
       expandAriaLabel="Show path"
       ariaLabel="Breadcrumbs"
     />

@@ -12,3 +12,20 @@ CREATE TABLE IF NOT EXISTS JOB_TABLE (
     job_payload TEXT,
     ts BIGINT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+CREATE TABLE IF NOT EXISTS EP_TABLE (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    job_id VARCHAR(255),
+    endpoint_name VARCHAR(255),
+    model_name VARCHAR(255),
+    engine VARCHAR(16),
+    enable_lora BOOLEAN,
+    instance_type VARCHAR(64),
+    instance_count INT,
+    model_s3_path TEXT,
+    endpoint_status VARCHAR(16),
+    endpoint_create_time DATETIME,
+    endpoint_delete_time DATETIME,
+    extra_config TEXT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

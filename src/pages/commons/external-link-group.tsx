@@ -19,7 +19,7 @@ interface ExternalLinkGroupProps {
   items: Array<ExternalLinkItemProps>;
 }
 
-function ExternalLinkItem({ href, text }: ExternalLinkItemProps) {
+export function ExternalLinkItem({ href, text }: ExternalLinkItemProps) {
   return (
     <Link href={href} target="_blank">
       {text}

@@ -43,9 +43,9 @@ const validationConfig: Record<
   model_name: [{ validate: validateEmpty, errorText: 'Model name is required.' }],
   prompt_template: [{ validate: validateEmpty, errorText: 'Prompt template name is required.' }],
   job_type: [{ validate: validateEmpty, errorText: 'Finetune type is required.' }],
-  dataset:[{ validate: validateEmpty, errorText: 'Dataset is required.' }],
+  // dataset:[{ validate: validateEmpty, errorText: 'Dataset is required.' }],
   datasetInfo:[{ validate: validateEmpty, errorText: 'DatasetInfo is required.' }],
-  training_stage: [{ validate: validateEmpty, errorText: 'Training Stage type is required.' }],
+  stage: [{ validate: validateEmpty, errorText: 'Training Stage type is required.' }],
   instance_type: [{ validate: validateEmpty, errorText: 'Instance type is required.' }],
   // instance_num: [{ validate: validateEmpty, errorText: 'Instance amount is required.' },
   //   {validate:validateNumers,errorText: 'Only integer is supported.' }

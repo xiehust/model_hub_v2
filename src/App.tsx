@@ -12,7 +12,8 @@ import JobTable from './pages/jobs'
 import NotFound from './pages/commons/no-found';
 import CreateJobApp from './pages/jobs/create-job';
 import JobDetailApp from './pages/jobs/job-detail';
-
+import EndpointsTable from './pages/endpoints';
+import ChatBot from './pages/chat/chatmain';
 
 function App() {
   return (
@@ -23,6 +24,9 @@ function App() {
           <Route path="/jobs" element={<JobTable/>} />
           <Route path="/jobs/createjob" element={<CreateJobApp/>} />
           <Route path="/jobs/:id" element={<JobDetailApp/>} />
+          <Route path="/endpoints" element={<EndpointsTable/>} />
+          <Route path='/chat' element={<ChatBot/>} />
+          <Route path='/chat/:endpoint' element={<ChatBot/>} />
           <Route path="*" element={<NotFound/>} />
         </Routes>
       </Router>

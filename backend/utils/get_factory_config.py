@@ -9,8 +9,8 @@ import asyncio
 from typing import Annotated, Sequence, TypedDict, Dict, Optional,List, Any,TypedDict
 
 from model.data_model import CommonResponse,ListModelNamesResponse,GetFactoryConfigRequest
-from core.llamafactory.extras.constants import SUPPORTED_MODELS,DEFAULT_TEMPLATE,TRAINING_STAGES,DATA_CONFIG,STAGES_USE_PAIR_DATA
-DEFAULT_DATA_DIR = 'core/llamafactory/data'
+from utils.llamafactory.extras.constants import SUPPORTED_MODELS,DEFAULT_TEMPLATE,TRAINING_STAGES,DATA_CONFIG,STAGES_USE_PAIR_DATA
+DEFAULT_DATA_DIR = 'utils/llamafactory/data'
 logger = logging.getLogger()
 # print(os.listdir())
 class APIException(Exception):
