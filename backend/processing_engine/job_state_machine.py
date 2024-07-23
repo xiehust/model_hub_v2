@@ -60,7 +60,11 @@ class JobStateMachine(BaseModel):
         if self.train_job_exe is None:
             logger.error(f"Job {self.job_id} has no training job executor.")
             return False
-        self.train_job_exe.run()
+        try:
+            self.train_job_exe.run()
+        except Exception as e:
+            logger.error(f"Job {self.job_id} failed to run: {e}")
+            return False
         return True
 
     def success_handler(self) ->bool:

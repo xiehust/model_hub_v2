@@ -7,7 +7,7 @@ import sys
 from datetime import datetime
 import boto3 
 import os
-
+from utils.config import DATASET_INFO_FILE
 
 
 sys.path.append('./')
@@ -16,7 +16,7 @@ from logger_config import setup_logger
 logger = setup_logger('helper.py', log_file='training_helper.log', level=logging.INFO)
 file_lock = threading.Lock()
 def prepare_dataset_info(data_info:Dict[str,Any]):
-    file_name = './LLaMA-Factory/data/dataset_info.json'   
+    file_name = DATASET_INFO_FILE   
     with file_lock:
         try:
             with open(file_name, 'r') as f:
@@ -25,7 +25,7 @@ def prepare_dataset_info(data_info:Dict[str,Any]):
                 datainfo[key] = data_info[key]
             with open(file_name, 'w') as f:
                 json.dump(datainfo, f)
-            logger.info('Successfully saved dataset_info.json')
+            # logger.info('Successfully saved dataset_info.json')
         except Exception as e:
             logger.error(f'Error in prepare_dataset_info: {str(e)}')
             

@@ -135,11 +135,18 @@ def get_job_status(job_id:str):
         
     
 async def fetch_training_log(request:FetchLogRequest):
-    if request.job_run_name :
-        logs = fetch_log(log_stream_name=request.job_run_name)
+    #get job run name
+    job_info = sync_get_job_by_id(request.job_id)
+    # print(job_info)
+    job_run_name = job_info.job_run_name
+    if job_run_name :
+        logs,next_forward_token,next_backward_token = fetch_log(log_stream_name=job_run_name,next_token=request.next_token)
     else:
-        logs = ['No logs exists, SageMaker Training Job might not exist']
-    return  FetchLogResponse(response_id= str(uuid.uuid4()), log_events=logs)
+        logs,next_forward_token,next_backward_token = ['No logs exists, SageMaker Training Job might not exist'],None,None
+    return  FetchLogResponse(response_id= str(uuid.uuid4()), 
+                             log_events=logs,
+                             next_backward_token=next_backward_token,
+                             next_forward_token=next_forward_token)
     
     
 if __name__ == '__main__':

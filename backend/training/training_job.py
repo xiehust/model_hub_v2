@@ -13,51 +13,57 @@ sys.path.append('./')
 from logger_config import setup_logger
 from training.helper import prepare_dataset_info,to_datetime_string,list_s3_objects
 from model.data_model import JobInfo
-from core.get_factory_config import get_model_path_by_name
+from utils.get_factory_config import get_model_path_by_name
+from utils.llamafactory.extras.constants import DEFAULT_TEMPLATE
 import dotenv
 import os
+from utils.config import boto_sess,role,default_bucket,sagemaker_session,LORA_BASE_CONFIG,DEEPSPEED_BASE_CONFIG_MAP
 dotenv.load_dotenv()
 
 logger = setup_logger('training_job.py', log_file='processing_engine.log', level=logging.INFO)
-BASE_CONFIG = './LLaMA-Factory/examples/train_qlora/llama3_lora_sft_awq.yaml'
-region_name = 'us-west-2'
-boto_sess = boto3.Session(
-    profile_name=os.environ.get('profile','default'),
-    region_name=os.environ.get('region')
-)
-
-sagemaker_session =  sagemaker.session.Session(boto_session=boto_sess) #sagemaker.session.Session()
-region = sagemaker_session.boto_region_name
-default_bucket = sagemaker_session.default_bucket()
-logger.info(default_bucket)
-
-role = os.environ.get('role')
 
 
-def fetch_log(log_group_name:str='/aws/sagemaker/TrainingJobs',log_stream_name:str=None):
+
+def fetch_log(log_group_name:str='/aws/sagemaker/TrainingJobs',log_stream_name:str=None,next_token:str=None):
     # 获取日志组中的所有日志流
-    logs_client = boto_sess.client('logs', region_name=region)
+    logs_client = boto_sess.client('logs')
     response = logs_client.describe_log_streams(
         logGroupName=log_group_name,
     )
     log_streams = response['logStreams']
     results = []
+    next_forward_token,next_backward_token = None,None
     # 遍历每个日志流并检索其日志事件
     for log_stream in log_streams:
         stream_name = log_stream['logStreamName']
         if stream_name and stream_name.startswith(log_stream_name):
-            logger.info(stream_name)
-            response = logs_client.get_log_events(
-                logGroupName=log_group_name,
-                logStreamName=stream_name
-            )
+            print(stream_name)
+            if next_token:
+                response = logs_client.get_log_events(
+                    logGroupName=log_group_name,
+                    nextToken=next_token,
+                    startFromHead=True,
+                    # limit=1000,
+                    logStreamName=stream_name
+                )
+                # print(response)
+
+            else:
+                response = logs_client.get_log_events(
+                    logGroupName=log_group_name,
+                    logStreamName=stream_name,
+                    startFromHead=True,
+                )
             events = response['events']
+            next_forward_token = response['nextForwardToken']
+            next_backward_token = response['nextBackwardToken']
+
             for event in events:
                 timestamp = to_datetime_string(event['timestamp']/1000)
                 message = event['message']
                 results.append(f'{timestamp}: {message}')
                 # print(f'{timestamp}: {message}')
-    return results
+    return results,next_forward_token,next_backward_token
                 
                 
 class TrainingJobExcutor(BaseModel):
@@ -69,72 +75,113 @@ class TrainingJobExcutor(BaseModel):
         super().__init__(*args, **kwargs)
 
         
-    def create_training_yaml(self,data_keys:List[str],
-                             per_device_train_batch_size:int,
-                             gradient_accumulation_steps:int,
-                             cutoff_len:int,
-                             num_train_epochs:float,
-                             warmup_steps:int,
-                             max_samples:int,
+    def create_training_yaml(self,
+                             job_payload:Dict[str,Any],
+                             data_keys:List[str],
                              model_id:str,
-                             lora_target:str,
                              base_config:str):
         
         with open(base_config) as f:
             doc = yaml.safe_load(f)
-
         doc['output_dir'] ='/tmp/finetuned_model'
-        doc['per_device_train_batch_size'] =per_device_train_batch_size
-        doc['gradient_accumulation_steps'] =gradient_accumulation_steps
-        doc['lora_target'] = lora_target
-        doc['cutoff_len'] = int(cutoff_len)
-        doc['num_train_epochs'] = float(num_train_epochs)
-        doc['warmup_steps'] = int(warmup_steps)
+        doc['per_device_train_batch_size'] =int(job_payload['per_device_train_batch_size'])
+        doc['gradient_accumulation_steps'] =int(job_payload['gradient_accumulation_steps'])
+        
+        #如果使用lora微调
+        if job_payload['finetuning_method'] == 'lora':
+            doc['finetuning_type'] = 'lora'
+            doc['lora_target'] = 'all'
+            doc['lora_rank'] = int(job_payload['lora_rank'])
+            doc['lora_alpha'] = int(job_payload['lora_alpha'])
+        else:
+            doc['finetuning_type'] = 'full'
+            
+        doc['learning_rate']=  float(job_payload['learning_rate'])
+        doc['cutoff_len'] = int(job_payload['cutoff_len'])
+        doc['num_train_epochs'] = float(job_payload['num_train_epochs'])
+        doc['warmup_steps'] = int(job_payload['warmup_steps'])
+        doc['model_name_or_path'] = model_id
+        if val_size:=float(job_payload['val_size']):
+            doc['val_size'] = val_size
+        doc['template'] =  DEFAULT_TEMPLATE[job_payload['prompt_template']]
+        
+        if job_payload['booster_option'] == 'fa2':
+            doc['flash_attn'] = 'fa2'
+        elif job_payload['booster_option']  == 'use_unsloth':
+            doc['flash_attn'] = 'auto'
+            doc['use_unsloth'] = True
+        else:
+            doc['flash_attn'] = 'auto'
+            
+            
+        doc['optim'] = job_payload['optimizer']
+        
+        deepspeed_config = DEEPSPEED_BASE_CONFIG_MAP.get(job_payload["deepspeed"])
+        if deepspeed_config:
+            doc['deepspeed'] = deepspeed_config
 
-        #实验时间，只选取前200条数据做训练
-        doc['max_samples'] = int(max_samples)
+        #using bitandbytes to quantize 
+        if job_payload['quantization_bit'] in ['4','8']:
+            doc['quantization_bit'] = int(job_payload['quantization_bit'])
+
+        #实验时间，只选取前max_samples条数据做训练
+        doc['max_samples'] = int(job_payload['max_samples'])
         #数据集
         doc['dataset'] = ','.join(data_keys)
+        logger.info(f'training config:\n{doc}')
+        
         uuid = shortuuid.uuid()
-        sg_config = f'sg_config_qlora_{uuid}.yaml'
+        sg_config = f'sg_config_{uuid}.yaml'
         with open(f'./LLaMA-Factory/{sg_config}', 'w') as f:
             yaml.safe_dump(doc, f)
         logger.info(f'save {sg_config}')
         # config lora merge
         sg_lora_merge_config = f'sg_config_lora_merge_{uuid}.yaml'
-        doc['model_name_or_path'] = model_id
-        doc['adapter_name_or_path'] ='/tmp/finetuned_model'
-        doc['export_dir'] ='/tmp/finetuned_model_merged'
+        doc_merge = {}
+        doc_merge['model_name_or_path'] = model_id
+        doc_merge['adapter_name_or_path'] ='/tmp/finetuned_model'
+        doc_merge['export_dir'] ='/tmp/finetuned_model_merged'
+        doc_merge['template'] =  DEFAULT_TEMPLATE[job_payload['prompt_template']]
+        doc_merge['export_size'] = 2
+        doc_merge['export_device'] = 'cpu'
+        doc_merge['export_legacy_format'] = False
+        
         with open(f'./LLaMA-Factory/{sg_lora_merge_config}', 'w') as f:
-            yaml.safe_dump(doc, f)
+            yaml.safe_dump(doc_merge, f)
+            
+        logger.info(f'save {sg_lora_merge_config}')
         
         return sg_config,sg_lora_merge_config
 
 
-    def create_single_qlora_training(self,
-                                     model_id:str,
-                                     sg_config:str,
-                                     sg_lora_merge_config:str,
-                                     instance_type:str ,
-                                     training_input_path:str=None):
-        instance_count = 1
-        max_time = 3600*24
+
         
+    def create_training(self,
+                        model_id:str,
+                        sg_config:str,
+                        sg_lora_merge_config:str,
+                        instance_type:str ,
+                        instance_num:int,
+                        merge_lora:str = '1',
+                        training_input_path:str=None):
+
+        max_time = 3600*24
         base_model_name = model_id.split('/')[-1]
         base_job_name = base_model_name
         
         output_s3_path = f's3://{default_bucket}/{base_job_name}/{self.job_id}/'
         environment = {
-            'NODE_NUMBER':str(instance_count),
+            'NODE_NUMBER':str(instance_num),
             "s3_data_paths":f"{training_input_path}",
-            # "merge_lora":"0",
+            "HUGGING_FACE_HUB_TOKEN":os.environ.get('HUGGING_FACE_HUB_TOKEN'),
+            "merge_lora":merge_lora,
             "sg_config":sg_config,
-            # "sg_lora_merge_config":sg_lora_merge_config,
-            'OUTPUT_MODEL_S3_PATH': output_s3_path # destination
+            "sg_lora_merge_config":sg_lora_merge_config,
+            'OUTPUT_MODEL_S3_PATH': output_s3_path, # destination
         }
-        
+        entry_point = 'entry_single_lora.py' if instance_num == 1 else 'entry-multi-nodes.py'
         self.output_s3_path = output_s3_path
-        self.estimator = PyTorch(entry_point='entry_single_lora.py',
+        self.estimator = PyTorch(entry_point=entry_point,
                                     source_dir='./LLaMA-Factory/',
                                     role=role,
                                     sagemaker_session=sagemaker_session,
@@ -143,61 +190,26 @@ class TrainingJobExcutor(BaseModel):
                                     framework_version='2.2.0',
                                     py_version='py310',
                                     script_mode=True,
-                                    instance_count=instance_count,
+                                    instance_count=instance_num,
                                     instance_type=instance_type,
                                     enable_remote_debug=True,
                                     # keep_alive_period_in_seconds=600,
                                     max_run=max_time)
         
         
-    
-    def _create_sft_lora(self,
-                         dataset_info:Dict[str,Any],
-                instance_type:str ,
-               data_keys:List[str],
-               model_id:str,
-               per_device_train_batch_size:int,
-               gradient_accumulation_steps:int,
-               lora_target:str,
-               cutoff_len:int,
-               num_train_epochs:float,
-               warmup_steps:int,
-               max_samples:int,
-               quant_type:str,
-               training_input_path:str,
-               base_config:str):
-        prepare_dataset_info(dataset_info)
-        sg_config, sg_lora_merge_config = self.create_training_yaml(data_keys=data_keys,
-                                                                    per_device_train_batch_size=per_device_train_batch_size,
-                                                                    gradient_accumulation_steps=gradient_accumulation_steps,
-                                                                    cutoff_len=cutoff_len,
-                                                                    num_train_epochs=num_train_epochs,
-                                                                    warmup_steps=warmup_steps,
-                                                                    max_samples=max_samples,
-                                                                    model_id = model_id,
-                                                                    lora_target=lora_target,
-                                                                    base_config =base_config)
-        if quant_type in ['4','8']:
-            self.create_single_qlora_training(sg_config=sg_config,
-                                                           model_id=model_id,
-                                                           sg_lora_merge_config=sg_lora_merge_config,
-                                                           training_input_path= training_input_path,
-                                                            instance_type=instance_type)
-        else:
-            logger.info(f"to do: create none lora training")
     def create(self):
-        from core.jobs import sync_get_job_by_id
+        from training.jobs import sync_get_job_by_id
         jobinfo=sync_get_job_by_id(self.job_id)
         logger.info(f"jobinfo of {self.job_id}:{jobinfo}")
         job_payload = jobinfo.job_payload
         
         
-        logger.info(job_payload)
+        # logger.info(job_payload)
         
-        s3_data_path=job_payload.get('s3_data_path')
-        
+        s3_data_path=job_payload.get('s3_data_path','')
 
         dataset_info = {}
+        s3_datakeys=[]
         # 如果指定了s3路径
         if s3_data_path:
             dataset_info_str = job_payload.get('dataset_info')
@@ -208,30 +220,35 @@ class TrainingJobExcutor(BaseModel):
             s3_data_path = s3_data_path[:-1] if s3_data_path[-1] == '/' else s3_data_path
         
         data_keys = job_payload.get('dataset',[])+s3_datakeys
+
+        prepare_dataset_info(dataset_info)
         
-        if job_payload['training_stage'] == 'sft' and job_payload['finetuning_method'] == 'lora':
-            self._create_sft_lora(dataset_info=dataset_info,
-                        instance_type=job_payload['instance_type'],
-                        data_keys=data_keys,
-                        model_id=get_model_path_by_name(job_payload['model_name']),
-                        per_device_train_batch_size = job_payload['batch_size'],
-                        gradient_accumulation_steps = job_payload['grad_accu'],
-                        lora_target = 'all',
-                        training_input_path = s3_data_path,
-                        quant_type = job_payload['quant_type'],
-                        cutoff_len=job_payload['cutoff_length'],
-                        num_train_epochs = job_payload['epoch'],
-                        warmup_steps = job_payload['warmup_steps'],
-                        max_samples = job_payload['max_samples'],
-                        base_config =BASE_CONFIG,
-                        )
+        #model_id参数
+        model_id=get_model_path_by_name(job_payload['model_name'])
+        
+        if job_payload['stage'] == 'sft':
+            sg_config,sg_lora_merge_config= self.create_training_yaml(
+                                data_keys=data_keys,
+                                job_payload=job_payload,
+                                 model_id = model_id,
+                                 base_config =LORA_BASE_CONFIG)
+            
+            merge_lora = '1' if job_payload['finetuning_method'] == 'lora' else '0'
+            self.create_training(sg_config=sg_config,
+                                      instance_num = int(job_payload['instance_num']),
+                                    model_id=model_id,
+                                    sg_lora_merge_config=sg_lora_merge_config,
+                                    training_input_path= s3_data_path,
+                                    merge_lora=merge_lora,
+                                        instance_type=job_payload['instance_type'])
+
             return True,'create job success'
         else:
             logger.warn('not supported yet')
             return False, 'type of job not supported yet'
         
     def run(self) -> bool:
-        from core.jobs import update_job_run_name_by_id
+        from training.jobs import update_job_run_name_by_id
 
         if not self.estimator:
             logger.error('estimator is None')

@@ -13,20 +13,21 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseSettings
 from fastapi.security import OAuth2PasswordBearer
-
+from fastapi.responses import StreamingResponse
+from typing import AsyncIterable
+import asyncio
 import shortuuid
 import uvicorn
 import time
 import uuid
 from pydantic import BaseModel,Field
-from model.data_model import CommonResponse,CreateJobsRequest \
-    ,ListJobsRequest,GetFactoryConfigRequest,GetJobsRequest \
-        ,DelJobsRequest,FetchLogRequest,ListS3ObjectsRequest\
-            ,S3ObjectsResponse
+from model.data_model import *
 
-from core.jobs import create_job,list_jobs,get_job_by_id,delete_job_by_id,fetch_training_log,get_job_status
-from core.get_factory_config import get_factory_config
-from core.outputs import list_s3_objects
+from training.jobs import create_job,list_jobs,get_job_by_id,delete_job_by_id,fetch_training_log,get_job_status
+from utils.get_factory_config import get_factory_config
+from utils.outputs import list_s3_objects
+from inference.endpoint_management import deploy_endpoint,delete_endpoint,get_endpoint_status,list_endpoints
+from inference.serving import inference
 
 dotenv.load_dotenv()
 logger = setup_logger('server.py', log_file='server.log', level=logging.INFO)
@@ -88,7 +89,7 @@ class ErrorResponse(BaseModel):
 class APIRequestResponse(BaseModel):
     message:str
 
-
+    
 def create_error_response(code: int, message: str) -> JSONResponse:
     return JSONResponse(
         ErrorResponse(message=message, code=code).json(), status_code=400
@@ -128,7 +129,7 @@ async def delete_job(request:DelJobsRequest):
 @app.post("/v1/create_job",dependencies=[Depends(check_api_key)])
 async def handle_create_job(request: CreateJobsRequest):
     request_timestamp = time.time()  
-    logger.debug(request.json())
+    logger.info(request.json())
     job_detail = await create_job(request)
     if job_detail:
         body = {
@@ -147,12 +148,14 @@ async def handle_create_job(request: CreateJobsRequest):
     
 @app.post("/v1/fetch_training_log",dependencies=[Depends(check_api_key)])
 async def handle_fetch_training_log(request:FetchLogRequest):
+    logger.info(request.json())
     resp = await fetch_training_log(request)
     return resp
 
 
 @app.post("/v1/get_job_status",dependencies=[Depends(check_api_key)])
 async def handle_get_job_status(request:GetJobsRequest):
+    logger.info(request.json())
     resp = get_job_status(request.job_id)
     return resp
 
@@ -161,6 +164,98 @@ async def handle_list_s3_path(request:ListS3ObjectsRequest):
     ret = list_s3_objects(request.output_s3_path)
     return S3ObjectsResponse(response_id=str(uuid.uuid4()),objects=ret)
     
+@app.post('/v1/deploy_endpoint',dependencies=[Depends(check_api_key)])
+async def handle_deploy_endpoint(request:DeployModelRequest):
+    logger.info(request)
+    ret,endpoint_name = deploy_endpoint(job_id=request.job_id,engine=request.engine,instance_type=request.instance_type,quantize=request.quantize,enable_lora=request.enable_lora)
+    
+    return CommonResponse(response_id=str(uuid.uuid4()),response={"result":ret, "endpoint_name": endpoint_name})
+
+@app.post('/v1/delete_endpoint',dependencies=[Depends(check_api_key)])
+async def handle_delete_endpoint(request:EndpointRequest):
+    logger.info(request)
+    endpoint_name = request.endpoint_name
+    result = delete_endpoint(endpoint_name)
+    return CommonResponse(response_id=str(uuid.uuid4()),response={"result": result})
+
+@app.post('/v1/get_endpoint_status',dependencies=[Depends(check_api_key)])
+async def handle_get_endpoint_status(request:EndpointRequest):
+    logger.info(request)
+    status = get_endpoint_status(endpoint_name=request.endpoint_name)
+    return CommonResponse(response_id=str(uuid.uuid4()),response={"status": status.value})
+
+@app.post('/v1/list_endpoints',dependencies=[Depends(check_api_key)])
+async def handle_list_endpoints(request:ListEndpointsRequest):
+    logger.info(request)
+    endpoints,count = list_endpoints(request)
+    return ListEndpointsResponse(response_id=str(uuid.uuid4()),endpoints=endpoints,total_count=count)
+
+
+def construct_chunk_message(id,delta,finish_reason,model):
+    return {
+        "id": id,
+        "model": model,
+        "object": "chat.completion.chunk",
+        "usage": None,
+        "created":int(time.time()),
+        "system_fingerprint": "fp",
+        "choices":[{
+            "index": 0,
+            "finish_reason": finish_reason,
+            "logprobs": None,
+            "delta": delta
+        }
+        ]}
+
+def generator_callback(chunk):
+    yield f'data: {json.dumps({"content": chunk})}\n\n'
+    
+        
+def stream_generator(inference_request:InferenceRequest) -> AsyncIterable[bytes]:
+    id = inference_request.id if inference_request.id else str(uuid.uuid4())
+    logger.info('--stream_generator---')
+    response_stream = inference(inference_request.endpoint_name, inference_request.model_name, 
+                                      inference_request.messages, inference_request.params, True)
+    logger.info('--response_stream---')
+
+    chunk= construct_chunk_message(id=id,model=inference_request.model_name,finish_reason=None,delta={ "role": "assistant","content": ""})
+    yield f"data: {json.dumps(chunk)}\n\n"
+    for chunk in response_stream:
+        chunk= construct_chunk_message(id=id,model=inference_request.model_name,finish_reason=None,delta={"content": chunk})
+        yield f"data: {json.dumps(chunk)}\n\n"
+
+    chunk= construct_chunk_message(id=id,model=inference_request.model_name,finish_reason="stop",delta={})
+    yield f"data: {json.dumps(chunk)}\n\n"
+    yield f"data: [DONE]\n\n"
+    
+    
+@app.post('/v1/chat/completions',dependencies=[Depends(check_api_key)])
+async def handle_inference(request:InferenceRequest):
+    logger.info(request)
+    if not request.stream:
+        response = inference(request.endpoint_name,request.model_name,request.messages,request.params,False)
+        id = request.id if request.id else str(uuid.uuid4())
+        return CommonResponse(response_id=id,response={
+                                                            "model":request.model_name,
+                                                            "usage": None,
+                                                            "created":int(time.time()),
+                                                            "system_fingerprint": "fp",
+                                                            "choices":[
+                                                                {
+                                                                    "index": 0,
+                                                                    "finish_reason": "stop",
+                                                                    "logprobs": None,
+                                                                    "message": {
+                                                                        "role": "assistant",
+                                                                        "content": response
+                                                                    }
+                                                                }
+                                                            ],
+                                                            'id':id,
+                                                            })
+    else:
+        return StreamingResponse(stream_generator(request), media_type="text/event-stream")
+
 
 def create_price_api_server():
     global app_settings

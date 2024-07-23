@@ -16,7 +16,15 @@ class JobType(Enum):
     dpo = 'dpo'
     kto = 'kto'
     rm = 'rm'
-    
+
+class EndpointStatus(Enum):
+    CREATING = "CREATING"
+    INSERVICE = "INSERVICE"
+    FAILED = "FAILED"
+    DELETING = "DELETING"
+    TERMINATED = "TERMINATED"
+    NOTFOUND = 'NOTFOUND'
+
 class JobStatus(Enum):
     PENDING = "PENDING"
     SUBMITTED = "SUBMITTED"
@@ -29,11 +37,15 @@ class JobStatus(Enum):
     STOPPED = "STOPPED"
     
 class FetchLogRequest(BaseModel):
-    job_run_name:str
+    # job_run_name:str
+    job_id:str
+    next_token:Optional[str] = None
     
 class FetchLogResponse(BaseModel):
     response_id:str
     log_events:List[str]
+    next_backward_token:Optional[str] = None
+    next_forward_token:Optional[str] = None
     
 class CreateJobsRequest(BaseModel):
     request_id:Optional[str]
@@ -96,5 +108,48 @@ class ListS3ObjectsRequest(BaseModel):
 class S3ObjectsResponse(BaseModel):
     response_id:str
     objects:List[Dict[str,Any]]
+    
+class DeployModelRequest(BaseModel):
+    job_id:str
+    engine:Literal["vllm","scheduler","lmi-dist","trt-llm"]
+    instance_type:str
+    quantize:str = ''
+    enable_lora:Optional[bool] = False
+    
+class EndpointRequest(BaseModel):
+    endpoint_name:str
 
+
+class ListEndpointsRequest(BaseModel):
+    page_size : int = 20
+    page_index : Optional[int] = Field(default=1)
+    query_terms : Optional[Dict[str,Any]] =  Field(default=None)
+
+class EndpointInfo(BaseModel):
+    job_id:str
+    endpoint_name:str
+    model_name:str
+    engine:str
+    enable_lora:bool
+    instance_type:str
+    instance_count:int
+    model_s3_path:str
+    endpoint_status:EndpointStatus
+    endpoint_create_time: Optional[datetime] = None
+    endpoint_delete_time:Optional[datetime] = None
+    extra_config:Optional[str]= None
+    
+    
+class ListEndpointsResponse(BaseModel):
+    response_id:str
+    endpoints :List[EndpointInfo]
+    total_count:int
+    
+class InferenceRequest(BaseModel):
+    endpoint_name:str
+    model_name:str
+    id:Optional[str] = None
+    messages:List[Dict[str,Any]]
+    params:Dict[str,Any]
+    stream: Optional[bool]= False
     

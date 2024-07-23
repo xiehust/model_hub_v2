@@ -9,7 +9,7 @@ import { FormHeader, FormWithValidation } from './components/form';
 // import ToolsContent from './components/tools-content';
 import '../../../styles/form.scss';
 
-const datasetInfoExample = `{"your_dataset_name":
+const datasetInfoExample = `{"your_dataset_key1":
     {
         "file_name":"your_dataset_name.json",
         "columns": {
@@ -17,6 +17,10 @@ const datasetInfoExample = `{"your_dataset_name":
             "query": "input",
             "response": "output"
         }
+    },
+    "your_dataset_key2":
+    {
+        "file_name":"your_dataset_name_2.json"
     }
 }`
 
@@ -25,17 +29,17 @@ const defaultData = {
   prompt_template: null,
   job_type: 'lora',
   job_name: '',
-  quant_type: 'none',
+  quantization_bit: 'none',
   finetuning_method: 'lora',
-  training_stage: '',
+  stage: 'sft',
   learning_rate: '5e-5',
-  batch_size: 2,
-  grad_accu: 8,
-  epoch: 3.0,
+  per_device_train_batch_size: 2,
+  gradient_accumulation_steps: 8,
+  num_train_epochs: 2.0,
   training_precision: 'fp16',
   max_samples: 50000,
-  cutoff_length: 1024,
-  val_size: 0.0,
+  cutoff_len: 1024,
+  val_size: 0,
   logging_steps: 10,
   warmup_steps: 10,
   save_steps: 500,
@@ -44,7 +48,9 @@ const defaultData = {
   lora_alpha: 16,
   instance_type: null,
   instance_num: 1,
-  datasetInfo: datasetInfoExample
+  datasetInfo: datasetInfoExample,
+  booster_option: 'auto',
+  deepspeed: 'none'
 };
 
 

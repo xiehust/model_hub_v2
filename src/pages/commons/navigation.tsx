@@ -1,44 +1,54 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
 import React from 'react';
-import SideNavigation, { SideNavigationProps } from '@cloudscape-design/components/side-navigation';
+import  { SideNavigationProps,SideNavigation,Badge} from '@cloudscape-design/components';
+import i18n from '../../common/i18n';
 
 const navHeader = { text: 'Service', href: '#/' };
 export const navItems: SideNavigationProps['items'] = [
   {
     type: 'section',
-    text: 'Reports and analytics',
+    text: 'Train Management',
     items: [
-      { type: 'link', text: 'Jobs', href: '#/jobs' },
+      { type: 'link', text: 'Training Jobs', href: '/jobs' },
     ],
   },
   {
     type: 'section',
-    text: 'Private content',
+    text: 'Endpoint Management',
     items: [
-      { type: 'link', text: 'How-to guide', href: '#/howto' },
-      { type: 'link', text: 'Origin access identity', href: '#/origin' },
+      { type: 'link', text: 'Endpoints', href: '/endpoints' },
     ],
   },
+  {
+    type: 'section',
+    text: 'Playground',
+    items: [
+      { type: 'link', text: 'Chat', href: '/chat' },
+    ],
+  }, 
+  {
+    type: 'section',
+    text: i18n.t('readme'),
+    items: [
+      { type: 'link', external: true, 
+      info: <Badge color="green">必读</Badge>,
+      text: '使用说明', href: 'https://amzn-chn.feishu.cn/docx/QniUdr7FroxShfxeoPacLJKtnXf' },
+    ],
+  }, 
 ];
 
-const defaultOnFollowHandler: SideNavigationProps['onFollow'] = event => {
-  // keep the locked href for our demo pages
-  event.preventDefault();
-};
 
 interface NavigationProps {
   activeHref?: string;
   header?: SideNavigationProps['header'];
   items?: SideNavigationProps['items'];
-  onFollowHandler?: SideNavigationProps['onFollow'];
 }
 
 export function Navigation({
   activeHref,
   header = navHeader,
   items = navItems,
-  onFollowHandler = defaultOnFollowHandler,
 }: NavigationProps) {
-  return <SideNavigation items={items} header={header} activeHref={activeHref} onFollow={onFollowHandler} />;
+  return <SideNavigation items={items} header={header} activeHref={activeHref} />;
 }

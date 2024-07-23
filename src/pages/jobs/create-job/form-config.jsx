@@ -25,12 +25,20 @@ export const TRAINING_PRECISION = [
   { label: 'pure_fp16', value: 'pure_fp16' },
 ]
 
+export const BOOSTER_OPTIONS = [
+  { label: 'None', value: 'auto' },
+  { label: 'FlashAttn2', value: 'fa2' },
+  { label: 'unsloth', value: 'use_unsloth' }
+]
+
 export const  INSTANCE_TYPES =[
   { label: 'ml.g4dn.2xlarge', value: 'ml.g4dn.2xlarge' },
   { label: 'ml.g4dn.12xlarge', value: 'ml.g4dn.12xlarge' },
   { label: 'ml.g5.2xlarge', value: 'ml.g5.2xlarge' },
   { label: 'ml.g5.12xlarge', value: 'ml.g5.12xlarge' },
   { label: 'ml.g5.48xlarge', value: 'ml.g5.48xlarge' },
+  { label: 'ml.g6.12xlarge', value: 'ml.g6.12xlarge' },
+  { label: 'ml.g6.48xlarge', value: 'ml.g6.48xlarge' },
   { label: 'ml.p4d.24xlarge', value: 'ml.p4d.24xlarge' },
   { label: 'ml.p4de.24xlarge', value: 'ml.p4de.24xlarge' },
   { label: 'ml.p5.48xlarge', value: 'ml.p5.48xlarge' }
@@ -39,7 +47,7 @@ export const  INSTANCE_TYPES =[
 
 export const TRAINING_STAGES = [
   { label: 'Supervised Fine-Tuning', value: 'sft' },
-  { label: 'Pre-Training', value: 'pt' },
+  // { label: 'Pre-Training', value: 'pt' },
   // { label: 'Reward Modeling', value: 'rm' },
   // { label: 'PPO', value: 'ppo' },
   // { label: 'DPO', value: 'dpo' },
@@ -49,6 +57,13 @@ export const OPTMIZERS =[
   { label: 'adamw_torch', value: 'adamw_torch' },
   { label: 'adamw_8bit', value: 'adamw_8bit' },
   { label: 'adafactor', value: 'adafactor' },
+]
+
+export const DEEPSPEED =[
+  { label: 'None', value: 'none' },
+  // { label: 'Stage 1', value: 'stage_1' ,description:'Only optimizer states is partitioned'},
+  { label: 'Stage 2', value: 'stage_2', description:'optimizer states + gradients are partitioned' },
+  { label: 'Stage 3', value: 'stage_3' ,description:'(Recommend) Stage 2 + weights are partitioned'  }
 ]
 
 export const QUANT_OPTIONS = [

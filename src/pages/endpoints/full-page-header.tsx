@@ -14,12 +14,11 @@ interface FullPageHeaderProps extends HeaderProps {
   onInfoLinkClick?: () => void;
   onDelete?: () => void;
   onRefresh?: () => void;
-  onDeploy?:()=>void;
 }
-
+// || selectedItems[0].endpoint_status !== 'INSERVICE'
 export function FullPageHeader({
-  title = 'Jobs',
-  createButtonText = 'Create Job',
+  title = 'Endpoints',
+  createButtonText = 'Start Chat',
   extraActions = null,
   selectedItemsCount,
   selectedItems,
@@ -28,11 +27,9 @@ export function FullPageHeader({
   onInfoLinkClick,
   onDelete,
   onRefresh,
-  onDeploy,
   ...props
 }: FullPageHeaderProps) {
-  const isOnlyOneSelected = selectedItemsCount === 1;
-  const selectedItem = selectedItems&&selectedItems[0];
+  // console.log("selectedItems",selectedItems)
   return (
     <Header
       variant="awsui-h1-sticky"
@@ -43,16 +40,10 @@ export function FullPageHeader({
           <Button data-testid="header-btn-refresh" iconName="refresh"  onClick={onRefresh}>
             Refresh
           </Button>
-          <Button data-testid="header-btn-deploy" onClick={onDeploy} disabled={!isOnlyOneSelected || selectedItem?.job_status !== 'SUCCESS' }>
-            Deploy
-          </Button>
-          <Button data-testid="header-btn-edit" disabled={!isOnlyOneSelected}>
-            Edit
-          </Button>
-          <Button data-testid="header-btn-delete" disabled={selectedItemsCount === 0} onClick={onDelete}>
+          <Button data-testid="header-btn-delete" disabled={selectedItemsCount === 0 } onClick={onDelete}>  
             Delete
           </Button>
-          <Button data-testid="header-btn-create" variant="primary" href='/jobs/createjob'>
+          <Button data-testid="header-btn-create" variant="primary" disabled={selectedItemsCount === 0 || selectedItems&&selectedItems[0]?.endpoint_status !== 'INSERVICE' } href={`/chat/${selectedItems&&selectedItems[0]?.endpoint_name}`}>
             {createButtonText}
           </Button>
         </SpaceBetween>

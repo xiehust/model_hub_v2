@@ -6,7 +6,7 @@ import Pagination from '@cloudscape-design/components/pagination';
 import Table from '@cloudscape-design/components/table';
 import TextFilter from '@cloudscape-design/components/text-filter';
 import { COLUMN_DEFINITIONS, DEFAULT_PREFERENCES, Preferences } from './table-config';
-import { Breadcrumbs, jobsBreadcrumbs } from '../commons/breadcrumbs'
+import { Breadcrumbs, endpointsBreadcrumbs } from '../commons/breadcrumbs'
 import { CustomAppLayout, Navigation, Notifications, TableNoMatchState } from '../commons/common-components';
 import { FullPageHeader } from './full-page-header';
 import { useLocalStorage } from '../commons/use-local-storage';
@@ -20,7 +20,7 @@ import { useColumnWidths } from '../commons/use-column-widths';
 import { useDistributions } from './hooks';
 import { TopNav } from '../commons/top-nav';
 import { remotePost } from '../../common/api-gateway';
-import {DeployModelModal} from '../endpoints/create-ed';
+import {DeleteModelModal} from '../endpoints/delete-ed';
 import '../../styles/base.scss';
 
 function ServerSideTable({
@@ -30,7 +30,7 @@ function ServerSideTable({
   setDisplayNotify,
   setNotificationData
 }) {
-  const [preferences, setPreferences] = useLocalStorage('ModelHub-JobTable-Preferences', DEFAULT_PREFERENCES);
+  const [preferences, setPreferences] = useLocalStorage('ModelHub-endpoint-table-Preferences', DEFAULT_PREFERENCES);
   const [descendingSorting, setDescendingSorting] = useState(false);
   const [currentPageIndex, setCurrentPageIndex] = useState(1);
   const [filteringText, setFilteringText] = useState('');
@@ -71,32 +71,9 @@ function ServerSideTable({
     setDelayedFilteringText('');
   };
 
-  const onDeploy =()=>{
+  const onDelete =()=>{
     setVisible(true);
   }
-
-  const onDelete = () => {
-    if (selectedItems[0].job_status === 'RUNNING' || selectedItems[0].job_status === 'SUCCESS'){
-      setDisplayNotify(true);
-      setNotificationData({ status: 'warning', content: `Only job in 'SUBMITTED' status can be deleted` });
-    }else{
-      remotePost({job_id:selectedItems[0].job_id},'delete_job').then(res=>{
-        console.log(res);
-        if (res.response.code === 'SUCCESS'){
-          setDisplayNotify(true);
-          setRefresh((prev)=>!prev);
-          setNotificationData({ status: 'success', content: `Deleted job id ${selectedItems[0].job_id}` });
-        }else{
-          setDisplayNotify(true);
-          setNotificationData({ status: 'error', content: `${selectedItems[0].job_id}. ${res.response.message}` });
-        }
-        
-      }).catch(err=>{
-        setDisplayNotify(true);
-        setNotificationData({ status: 'error', content: `Error deleting job id ${selectedItems[0].job_id}` });
-      })
-    }
-  };
 
   const onRefresh = () => {
     setRefresh((prev)=>!prev);
@@ -105,7 +82,7 @@ function ServerSideTable({
 
   return (
     <div>
-    {visible&&<DeployModelModal setDisplayNotify={setDisplayNotify} setNotificationData={setNotificationData}
+    {visible&&<DeleteModelModal setDisplayNotify={setDisplayNotify} setNotificationData={setNotificationData}
     selectedItems={selectedItems} setVisible={setVisible} visible={visible}/>}
 
     <Table
@@ -135,7 +112,6 @@ function ServerSideTable({
           selectedItemsCount={selectedItems.length}
           selectedItems={selectedItems}
           onDelete = {onDelete}
-          onDeploy = {onDeploy}
           setNotificationData = {setNotificationData}
           setDisplayNotify = {setDisplayNotify}
           counter={!loading && getHeaderCounterServerSideText(totalCount, selectedItems.length)}
@@ -170,8 +146,8 @@ function ServerSideTable({
   );
 }
 
-function JobTable() {
-  const [columnDefinitions, saveWidths] = useColumnWidths('React-JobTable-Widths', COLUMN_DEFINITIONS);
+function EndpointsTable() {
+  const [columnDefinitions, saveWidths] = useColumnWidths('React-Endpointtable-Widths', COLUMN_DEFINITIONS);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [notificationData, setNotificationData] = useState({});
   const [displayNotify, setDisplayNotify] = useState(false);
@@ -183,9 +159,9 @@ function JobTable() {
       <TopNav />
       <CustomAppLayout
         ref={appLayout}
-        navigation={<Navigation activeHref="/jobs" />}
+        navigation={<Navigation activeHref="/endpoints" />}
         notifications={<Notifications successNotification={displayNotify} data={notificationData} />}
-        breadcrumbs={<Breadcrumbs items={jobsBreadcrumbs} />}
+        breadcrumbs={<Breadcrumbs items={endpointsBreadcrumbs} />}
         content={
           <div>
           <ServerSideTable
@@ -210,5 +186,5 @@ function JobTable() {
 }
 
 
-export default JobTable;
+export default EndpointsTable;
 

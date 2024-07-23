@@ -1,6 +1,6 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Container,
   Checkbox,
@@ -16,7 +16,7 @@ import {
   Multiselect,
   Textarea,
 } from '@cloudscape-design/components';
-import { FT_OPTIONS, QUANT_OPTIONS, TRAINING_STAGES, TRAINING_PRECISION,OPTMIZERS,INSTANCE_TYPES } from '../form-config';
+import { FT_OPTIONS, QUANT_OPTIONS, TRAINING_STAGES, TRAINING_PRECISION,OPTMIZERS,INSTANCE_TYPES,BOOSTER_OPTIONS, DEEPSPEED } from '../form-config';
 import validateField from '../form-validation-config';
 import { remotePost } from '../../../../common/api-gateway';
 import {S3Selector} from './output-path';
@@ -104,13 +104,43 @@ function AdvancedConfigs({ onChange, readOnly, data,setData }) {
   );
 }
 
+function DeepSpeedConfigs({ onChange, readOnly, data,setData }) {
+  return (
+  <SpaceBetween size="l"> 
+    <ExpandableSection headerText="DeepSpeed configurations (Applicable for Multi-GPU/Nodes)" variant="footer" expanded>
+      <Grid
+        gridDefinition={[ { colspan: { default: 6, xxs: 4 } },{ colspan: { default: 6, xxs: 4 } }]}
+      >
+        <FormField
+          label="DeepSpeed Stage"
+          description="DeepSpeed stage for distributed training."
+          stretch={false}
+        >
+          <RadioGroup
+              items={DEEPSPEED}
+              value={data.job_payload ? data.job_payload.deepspeed : data.deepspeed}
+              onChange={({ detail: { value } }) => onChange('deepspeed', value)}
+              readOnly={readOnly}
+            />
+        </FormField>
+      </Grid>
+    </ExpandableSection>
+   
+ </SpaceBetween> 
+  );
+}
 
 const SelectPromptTemplate = ({ data, setData, readOnly, refs }) => {
   const [loadStatus, setLoadStatus] = useState("loading");
   const [items, setItems] = useState([]);
-  const initState = data.job_payload ? { label: data.job_payload.prompt_template, value: data.job_payload.prompt_template } : {};
-  const [selectOption, setSelectOption] = useState(initState);
-  // const [selectOption, setSelectOption] = useState({});
+  // const initState = data.job_payload ? { label: data.job_payload.prompt_template, value: data.job_payload.prompt_template } : {};
+  const [selectOption, setSelectOption] = useState({});
+  useEffect(() => {
+    if (data.job_payload) {
+      setSelectOption({ label: data.job_payload.prompt_template, value: data.job_payload.prompt_template });
+      setData({ prompt_template: data.job_payload.prompt_template })
+    }
+  }, [data.job_payload]);
   const handleLoadItems = async ({
     detail: { filteringText, firstPage, samePage },
   }) => {
@@ -151,8 +181,14 @@ const SelectPromptTemplate = ({ data, setData, readOnly, refs }) => {
 const SelectModelName = ({ data, setData, readOnly, refs }) => {
   const [loadStatus, setLoadStatus] = useState("loading");
   const [items, setItems] = useState([]);
-  const initState = data.job_payload ? { label: data.job_payload.model_name, value: data.job_payload.model_name } : {};
-  const [selectOption, setSelectOption] = useState(initState);
+  // const initState = data.job_payload ? { label: data.job_payload.model_name, value: data.job_payload.model_name } : {};
+  const [selectOption, setSelectOption] = useState({}); 
+  useEffect(() => {
+    if (data.job_payload) {
+      setSelectOption({ label: data.job_payload.model_name, value: data.job_payload.model_name })
+      setData({ model_name: data.job_payload.model_name })
+    }
+  }, [data.job_payload])
   const handleLoadItems = async ({
     detail: { filteringText, firstPage, samePage },
   }) => {
@@ -195,7 +231,7 @@ const SelectDatasets = ({ data, setData, readOnly, refs }) => {
   const [loadStatus, setLoadStatus] = useState("loading");
   const [items, setItems] = useState([]);
 
-  const initState = data.job_payload ? data.job_payload.dataset.map(item => ({
+  const initState = data.job_payload &&data.job_payload.dataset? data.job_payload.dataset.map(item => ({
     label: item, value: item
   })) : []
   // const [selectOption, setSelectOption] = useState(initState);
@@ -240,7 +276,7 @@ const SelectDatasets = ({ data, setData, readOnly, refs }) => {
 
 const SelectStage = ({ data, setData, readOnly, refs }) => {
 
-  const initState = TRAINING_STAGES.filter(item => data.job_payload?.training_stage === item.value)
+  const initState = TRAINING_STAGES.filter(item => data.job_payload?.stage === item.value)
   const [selectOption, setSelectOption] = useState(initState.length ? initState[0] : {});
   return (
     <Select
@@ -248,11 +284,11 @@ const SelectStage = ({ data, setData, readOnly, refs }) => {
       disabled={readOnly}
       onChange={({ detail }) => {
         setSelectOption(detail.selectedOption);
-        setData({ training_stage: detail.selectedOption.value })
+        setData({ stage: detail.selectedOption.value })
       }}
       options={TRAINING_STAGES}
       selectedAriaLabel="Selected"
-      ref={refs.training_stage}
+      ref={refs.stage}
     />
   )
 }
@@ -275,8 +311,14 @@ const SelectOptimizer = ({ data, setData, readOnly, refs }) => {
 }
 
 const SelectInstanceType = ({ data, setData, readOnly, refs }) => {
-  const initState = INSTANCE_TYPES.filter(item => data.job_payload?.instance_type === item.value)
-  const [selectOption, setSelectOption] = useState(initState.length ? initState[0] : []);
+  // const initState = INSTANCE_TYPES.filter(item => data.job_payload?.instance_type === item.value)
+  const [selectOption, setSelectOption] = useState([]);
+  useEffect(() => {
+    if (data.job_payload) {
+      setSelectOption({ label: data.job_payload.instance_type, value: data.job_payload.instance_type })
+      setData({ instance_type: data.job_payload.instance_type })
+    }
+  }, [data.job_payload])
   return (
     <Select
       selectedOption={selectOption}
@@ -310,11 +352,23 @@ const SelectTrainingPrecision = ({ data, setData, readOnly, refs }) => {
   )
 }
 
+const SelectBooster = ({ data, setData, readOnly, refs }) => {
+  const initState = BOOSTER_OPTIONS.filter(item => data.job_payload?.booster_option === item.value)
+  const [selectOption, setSelectOption] = useState(initState.length ? initState[0] : BOOSTER_OPTIONS[0]);
+  return (
+    <Select
+      selectedOption={selectOption}
+      disabled={readOnly}
+      onChange={({ detail }) => {
+        setSelectOption(detail.selectedOption);
+        setData({ booster_option: detail.selectedOption.value })
+      }}
+      options={BOOSTER_OPTIONS}
+      selectedAriaLabel="Selected"
+    />
+  )
+}
 
-const isS3PermissionError = (attribute, errorText) =>
-  attribute === 's3BucketSelectedOption' &&
-  errorText ===
-  "CloudFront isn't allowed to write logs to this bucket. You must enable access control lists (ACL) for the bucket.";
 
 export default function DistributionPanel({
   loadHelpPanelContent,
@@ -336,11 +390,6 @@ export default function DistributionPanel({
     if (validation && errors[attribute]?.length > 0) {
       const { errorText } = validateField(attribute, value);
       setErrors({ [attribute]: errorText });
-      // if (isS3PermissionError(attribute, errorText)) {
-      //   setErrors({ [attribute]: '' });
-      // } else {
-      //   setErrors({ [attribute]: errorText });
-      // }
     }
   };
 
@@ -352,10 +401,6 @@ export default function DistributionPanel({
 
     const value = data[attribute];
     const { errorText } = validateField(attribute, value);
-
-    if (isS3PermissionError(attribute, errorText)) {
-      return;
-    }
 
     setErrors({ [attribute]: errorText });
   };
@@ -386,7 +431,7 @@ export default function DistributionPanel({
             label="Train Stage"
             description="The stage to perform in training."
             stretch={false}
-            errorText={errors.training_stage}
+            errorText={errors.stage}
             i18nStrings={{ errorIconAriaLabel: 'Error' }}
           >
             <SelectStage data={data} setData={setData} readOnly={readOnly} refs={refs} />
@@ -429,9 +474,20 @@ export default function DistributionPanel({
           >
             <RadioGroup
               items={QUANT_OPTIONS}
-              value={data.job_payload ? data.job_payload.quant_type : data.quant_type}
-              onChange={({ detail: { value } }) => onChange('quant_type', value)}
-              ref={refs.quant_type}
+              value={data.job_payload ? data.job_payload.quantization_bit : data.quantization_bit}
+              onChange={({ detail: { value } }) => onChange('quantization_bit', value)}
+              ref={refs.quantization_bit}
+            />
+          </FormField>
+          <FormField
+            label="Booster Option"
+            stretch={true}
+          >
+            <RadioGroup
+              items={BOOSTER_OPTIONS}
+              value={data.job_payload ? data.job_payload.booster_option : data.booster_option}
+              onChange={({ detail: { value } }) => onChange('booster_option', value)}
+              ref={refs.booster_option}
             />
           </FormField>
         </SpaceBetween>
@@ -492,8 +548,8 @@ export default function DistributionPanel({
               stretch={false}
             >
               <Input readOnly={readOnly}
-                value={data.job_payload ? data.job_payload.cutoff_length : data.cutoff_length}
-                onChange={({ detail: { value } }) => onChange('cutoff_length', value)}
+                value={data.job_payload ? data.job_payload.cutoff_len : data.cutoff_len}
+                onChange={({ detail: { value } }) => onChange('cutoff_len', value)}
               />
             </FormField>
           </Grid>
@@ -513,6 +569,7 @@ export default function DistributionPanel({
       </Container>
       <Container
         header={<Header variant="h2">Training Instances settings</Header>}
+        footer={<DeepSpeedConfigs data={data} onChange={onChange} readOnly={readOnly} setData={setData}/>}
       >
         <SpaceBetween size="l">
           <FormField
@@ -561,20 +618,20 @@ export default function DistributionPanel({
             stretch={false}
           >
             <Input readOnly={readOnly}
-              value={data.job_payload ? data.job_payload.epoch : data.epoch}
-              onChange={({ detail: { value } }) => onChange('epoch', value)}
+              value={data.job_payload ? data.job_payload.num_train_epochs : data.num_train_epochs}
+              onChange={({ detail: { value } }) => onChange('num_train_epochs', value)}
             />
           </FormField>
         </Grid>
         <Grid gridDefinition={[{ colspan: { "default": 6, xxs: 4 } }, { colspan: { "default": 6, xxs: 4 } }]}>
           <FormField
-            label="Batch size"
+            label="Batch size per device"
             description="Number of samples processed on each GPU."
             stretch={false}
           >
             <Input readOnly={readOnly}
-              value={data.job_payload ? data.job_payload.batch_size : data.batch_size}
-              onChange={({ detail: { value } }) => onChange('batch_size', value)}
+              value={data.job_payload ? data.job_payload.per_device_train_batch_size : data.per_device_train_batch_size}
+              onChange={({ detail: { value } }) => onChange('per_device_train_batch_size', value)}
             />
           </FormField>
           <FormField
@@ -583,8 +640,8 @@ export default function DistributionPanel({
             stretch={false}
           >
             <Input readOnly={readOnly}
-              value={data.job_payload ? data.job_payload.grad_accu : data.grad_accu}
-              onChange={({ detail: { value } }) => onChange('grad_accu', value)}
+              value={data.job_payload ? data.job_payload.gradient_accumulation_steps : data.gradient_accumulation_steps}
+              onChange={({ detail: { value } }) => onChange('gradient_accumulation_steps', value)}
             />
           </FormField>
         </Grid>
