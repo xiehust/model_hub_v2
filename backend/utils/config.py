@@ -14,12 +14,19 @@ DATASET_INFO_FILE = './LLaMA-Factory/data/dataset_info.json'
 # HuggingFace Accelerate, use "scheduler" if deploying a text-generation model, and "disable" for other tasks (can also the config omit entirely)
 DEFAULT_ENGINE='vllm'#'scheduler'
 DEFAULT_REGION = os.environ.get('region')
-boto_sess = boto3.Session(
-    profile_name=os.environ.get('profile'),
-    aws_access_key_id=os.environ['AK'],
-    aws_secret_access_key=os.environ['SK'],
-    region_name=DEFAULT_REGION
-)
+if os.environ.get('profile'):
+    boto_sess = boto3.Session(
+        profile_name=os.environ.get('profile'),
+        aws_access_key_id=os.environ['AK'],
+        aws_secret_access_key=os.environ['SK'],
+        region_name=DEFAULT_REGION
+    )
+else :
+    boto_sess = boto3.Session(
+        profile_name=os.environ.get('profile'),
+        region_name=DEFAULT_REGION
+    )
+    
 print(f"region:{boto_sess.region_name}")
 role = os.environ.get('role')
 sagemaker_session =  sagemaker.session.Session(boto_session=boto_sess) #sagemaker.session.Session()
