@@ -1,13 +1,12 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
-
 import axios from 'axios';
-console.log(process.env)
+// console.log(process.env)
 export const API_ENDPOINT= process.env.REACT_APP_API_ENDPOINT;
 export const API_KEY = process.env.REACT_APP_API_KEY;
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 export const remotePost = async(formdata,path,stream=false) =>{
-    // console.log('api:',`${API_ENDPOINT}/${path}`)
     const headers = {'Content-Type': 'application/json', 
         'Authorization': `Bearer ${API_KEY}`
         };

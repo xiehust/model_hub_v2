@@ -71,19 +71,18 @@ def get_endpoint_status(endpoint_name:str) ->EndpointStatus:
 def delete_endpoint(endpoint_name:str) ->bool:
     client = boto_sess.client('sagemaker')
     try:
-        client.delete_endpoint(EndpointName=endpoint_name)
-        client.delete_endpoint_config(EndpointConfigName=endpoint_name)
-        client.delete_model(ModelName=endpoint_name)
         database.update_endpoint_status(
                 endpoint_name=endpoint_name,
                 endpoint_status=EndpointStatus.TERMINATED,
                 endpoint_delete_time= datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
             )
+        client.delete_endpoint(EndpointName=endpoint_name)
+        client.delete_endpoint_config(EndpointConfigName=endpoint_name)
+        client.delete_model(ModelName=endpoint_name)
         return True
     except Exception as e:
         logger.error(e)
-        return False
+        return True
         
 def deploy_endpoint(job_id:str,engine:str,instance_type:str,quantize:str,enable_lora:bool) -> Dict[bool,str]:
     jobinfo = sync_get_job_by_id(job_id)

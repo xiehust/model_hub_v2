@@ -15,8 +15,6 @@ from pydantic import BaseSettings
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.responses import StreamingResponse
 from typing import AsyncIterable
-import asyncio
-import shortuuid
 import uvicorn
 import time
 import uuid
@@ -28,17 +26,18 @@ from utils.get_factory_config import get_factory_config
 from utils.outputs import list_s3_objects
 from inference.endpoint_management import deploy_endpoint,delete_endpoint,get_endpoint_status,list_endpoints
 from inference.serving import inference
+from users.login import login_auth
 
 dotenv.load_dotenv()
 logger = setup_logger('server.py', log_file='server.log', level=logging.INFO)
-
-
-class AppSettings(BaseSettings):
+api_keys = os.environ['api_keys'].split(',')
+print(api_keys)
+class AppSettings(BaseModel):
     # The address of the model controller.
     api_keys: Optional[List[str]] = None
 
 
-app_settings = AppSettings(api_keys=os.environ['api_keys'].split(','))
+app_settings = AppSettings(api_keys=api_keys)
 app = fastapi.FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -103,6 +102,12 @@ async def validation_exception_handler(request, exc):
 @app.get("/ping")
 async def ping():
     return APIRequestResponse(message='ok')
+
+@app.post("/v1/login",dependencies=[Depends(check_api_key)])
+async def handel_login(request:LoginRequest):
+    response = login_auth(username = request.username,password = request.password)
+    return CommonResponse(response=response,response_id=str(uuid.uuid4()))
+
 
 @app.post("/v1/list_jobs",dependencies=[Depends(check_api_key)])
 async def handel_list_jobs(request:ListJobsRequest):
@@ -276,11 +281,6 @@ def create_price_api_server():
     parser.add_argument(
         "--allowed-headers", type=json.loads, default=["*"], help="allowed headers"
     )
-    # parser.add_argument(
-    #     "--api-keys",
-    #     type=lambda s: s.split(","),
-    #     help="Optional list of comma separated API keys",
-    # )
     parser.add_argument(
         "--ssl",
         action="store_true",
@@ -289,15 +289,6 @@ def create_price_api_server():
         help="Enable SSL. Requires OS Environment variables 'SSL_KEYFILE' and 'SSL_CERTFILE'.",
     )
     args = parser.parse_args()
-
-    # app.add_middleware(
-    #     CORSMiddleware,
-    #     allow_origins=args.allowed_origins,
-    #     allow_credentials=args.allow_credentials,
-    #     allow_methods=args.allowed_methods,
-    #     allow_headers=args.allowed_headers,
-    # )
-    # app_settings.api_keys = args.api_keys
 
     
     return args
@@ -316,4 +307,4 @@ if __name__ == "__main__":
             ssl_certfile=os.environ["SSL_CERTFILE"],
         )
     else:
-        uvicorn.run("server:app", host=args.host, port=args.port, log_level="info",reload=True,workers=1)
+        uvicorn.run("server:app", host=args.host, port=args.port, log_level="info",reload=True,workers=5)

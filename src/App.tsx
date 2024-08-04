@@ -1,5 +1,4 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, { useEffect } from "react";
 import './App.css';
 import {
   BrowserRouter as Router,
@@ -14,25 +13,43 @@ import CreateJobApp from './pages/jobs/create-job';
 import JobDetailApp from './pages/jobs/job-detail';
 import EndpointsTable from './pages/endpoints';
 import ChatBot from './pages/chat/chatmain';
+import { ProvideAuth, useAuthSignout} from "./pages/commons/use-auth";
+import  {RequireAuth} from './pages/commons/private-route';
+import LoginPage from "./pages/login/login";
 
 function App() {
   return (
     <div className="App">
       <Router>
+      <ProvideAuth>
         <Routes>
-          <Route path="/" element={<JobTable/>} />
-          <Route path="/jobs" element={<JobTable/>} />
-          <Route path="/jobs/createjob" element={<CreateJobApp/>} />
-          <Route path="/jobs/:id" element={<JobDetailApp/>} />
-          <Route path="/endpoints" element={<EndpointsTable/>} />
-          <Route path='/chat' element={<ChatBot/>} />
-          <Route path='/chat/:endpoint' element={<ChatBot/>} />
+          <Route path="/" element={<LoginPage/>} />
+          <Route path="/login" element={<LoginPage/>} />
+          <Route path="/jobs" element={<RequireAuth requireAdmin={false}  redirectPath="/login"><JobTable/></RequireAuth>} />
+          <Route path="/jobs/createjob" element={<RequireAuth requireAdmin={false}  redirectPath="/login"><CreateJobApp/></RequireAuth>} />
+          <Route path="/jobs/:id" element={<RequireAuth requireAdmin={false}  redirectPath="/login"><JobDetailApp/></RequireAuth>} />
+          <Route path="/endpoints" element={<RequireAuth requireAdmin={false}  redirectPath="/login"><EndpointsTable/></RequireAuth>} />
+          <Route path='/chat' element={<RequireAuth requireAdmin={false}  redirectPath="/login"><ChatBot/></RequireAuth>} />
+          <Route path='/chat/:endpoint' element={<RequireAuth requireAdmin={false}  redirectPath="/login"><ChatBot/></RequireAuth>} />
           <Route path="*" element={<NotFound/>} />
+          <Route path="/signout" element={<SignOut/>}/>
         </Routes>
+        </ProvideAuth>
       </Router>
 
     </div>
   );
 }
+
+function SignOut(){
+  const signout = useAuthSignout();
+  const navigate = useNavigate();
+  useEffect(()=>{
+    navigate("/login");
+    signout();
+  },[])
+  return <h1>sign out</h1>;
+}
+
 
 export default App;

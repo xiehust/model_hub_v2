@@ -39,7 +39,6 @@ function ServerSideTable({
   const [refresh,setRefresh] = useState(false);
   const [visible, setVisible] = useState(false);
   const [selectedItems, setSelectedItems] = useState([]);
-  const [data,setData] = useState();
   const { pageSize } = preferences;
   const params = {
     pagination: {
@@ -76,16 +75,16 @@ function ServerSideTable({
   }
 
   const onDelete = () => {
-    if (selectedItems[0].job_status === 'RUNNING' || selectedItems[0].job_status === 'SUCCESS'){
+    if (selectedItems[0].job_status === 'RUNNING'){
       setDisplayNotify(true);
-      setNotificationData({ status: 'warning', content: `Only job in 'SUBMITTED' status can be deleted` });
+      setNotificationData({ status: 'warning', content: `"RUNNING" 状态无法删除，请到SageMaker控制台中停止训练任务。` });
     }else{
       remotePost({job_id:selectedItems[0].job_id},'delete_job').then(res=>{
         console.log(res);
         if (res.response.code === 'SUCCESS'){
           setDisplayNotify(true);
           setRefresh((prev)=>!prev);
-          setNotificationData({ status: 'success', content: `Deleted job id ${selectedItems[0].job_id}` });
+          setNotificationData({ status: 'success', content: `删除成功 job id ${selectedItems[0].job_id}` });
         }else{
           setDisplayNotify(true);
           setNotificationData({ status: 'error', content: `${selectedItems[0].job_id}. ${res.response.message}` });
@@ -93,7 +92,7 @@ function ServerSideTable({
         
       }).catch(err=>{
         setDisplayNotify(true);
-        setNotificationData({ status: 'error', content: `Error deleting job id ${selectedItems[0].job_id}` });
+        setNotificationData({ status: 'error', content: `删除失败 job id ${selectedItems[0].job_id}` });
       })
     }
   };

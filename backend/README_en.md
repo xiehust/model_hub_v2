@@ -1,17 +1,17 @@
-## 后端环境安装
+## ENV Setup
 
-### 安装 python virtual env
+### Install python virtual env
 ```bash
 conda create -n py311 python=3.11
 conda activate py311
 ```
 
-### 安装 requirements
+### Install requirements
 ```bash
 pip install -r requirements.txt
 ```
 
-### 安装配置MYSQL
+### Setup MYSQL
 - Install Docker
 Log in to the EC2 instance using SSH command as the ec2-user user or use the AWS EC2 Instance Connect feature in the EC2 console to log in to the command line. 
 
@@ -59,7 +59,6 @@ cd scripts
 docker exec hub-mysql sh -c "mysql -u root -p1234560 -D llm  < /opt/data/mysql_setup.sql"
 ```
 
-#### 其他命令（仅供参考，不用执行）
 - To login in cmd line
 ```bash
 docker exec -it hub-mysql mysql -u root -p1234560
@@ -79,75 +78,6 @@ docker rm hub-mysql
 ```bash
 docker start hub-mysql
 ```
-
-### 添加用户
-```bash
-python3 backend/add_user.py
-```
-
-### 安装nginx
-- 安装nginx
-```bash
-sudo apt update 
-sudo apt install nginx
-```
-
-- 创建nginx配置文件  
-目的：
-  让后端webserver Listens on port 443 without SSL  
-  Forwards requests to your application running on localhost:8000  
-
-注意需要把xxx.compute.amazonaws.com改成实际的ec2 dns名称
-```bash 
-sudo vim /etc/nginx/sites-available/modelhub
-```
-
-```nginx
-server {
-    listen 80;
-    server_name xxx.compute.amazonaws.com;
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-
-server {
-    listen 443;
-    server_name xxx.compute.amazonaws.com;
-
-    location / {
-        proxy_pass http://localhost:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-
-- 更改server name bucket size 
-- 打开nginx配置文件
-```bash
-sudo vim /etc/nginx/nginx.conf
-```
-- 把server_names_hash_bucket_size 改成256
-```nginx
-http {
-    server_names_hash_bucket_size 256;
-    # ... other configurations ...
-}
-```
-
-- 生效配置:
-```bash
-sudo ln -s /etc/nginx/sites-available/modelhub /etc/nginx/sites-enabled/ 
-sudo nginx -t 
-sudo systemctl restart nginx
-
 
 ### Run
 ```bash

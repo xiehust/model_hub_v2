@@ -34,6 +34,7 @@ MYSQL_CONFIG = {
 }
 JOB_TABLE = "JOB_TABLE"
 EP_TABLE = 'EP_TABLE'
+USER_TABLE= 'USER_TABLE'
 DEEPSPEED_BASE_CONFIG_MAP = { "stage_2":'examples/deepspeed/ds_z2_config.json',
                              "stage_3":'examples/deepspeed/ds_z3_config.json'}
 

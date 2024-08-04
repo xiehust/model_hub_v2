@@ -34,7 +34,7 @@ const defaultData = {
   stage: 'sft',
   learning_rate: '5e-5',
   per_device_train_batch_size: 2,
-  gradient_accumulation_steps: 8,
+  gradient_accumulation_steps: 4,
   num_train_epochs: 2.0,
   training_precision: 'fp16',
   max_samples: 50000,
@@ -61,6 +61,7 @@ const CreateJobApp = () => {
   const [notificationData, setNotificationData] = useState({});
   const [displayNotify, setDisplayNotify] = useState(false);
   const [data, _setData] = useState(defaultData);
+  const [loading, setLoading] = useState(false);
 
   const loadHelpPanelContent = index => {
     setToolsIndex(index);
@@ -75,6 +76,8 @@ const CreateJobApp = () => {
       content={
         <FormWithValidation
           loadHelpPanelContent={loadHelpPanelContent}
+          loading={loading}
+          setLoading={setLoading}
           data={data}
           _setData={_setData}
           setNotificationData={setNotificationData}
