@@ -112,8 +112,10 @@ export const DeployModelModal = ({
   }: PageHeaderProps) => {
     const [errors, _setErrors] = useState(defaultErrors);
     const [data, setData] = useState(defaultData);
+    const [loading, setLoading] = useState(false);
     console.log(data)
     const onDeloyConfirm =()=>{
+        setLoading(true);
         const jobId = selectedItems[0].job_id
         const fromData = {...data,job_id:jobId}
         remotePost(fromData, 'deploy_endpoint').
@@ -122,6 +124,7 @@ export const DeployModelModal = ({
               setVisible(false);
               setDisplayNotify(true);
               setNotificationData({ status: 'success', content: `Create Endpoint Name:${res.response.endpoint_name}` });
+              setLoading(false);
             }
         
         })
@@ -129,6 +132,7 @@ export const DeployModelModal = ({
           setDisplayNotify(true);
           setVisible(false);
           setNotificationData({ status: 'error', content: `Create Endpoint failed` });
+          setLoading(false);
         })
     }
     return (
@@ -139,7 +143,10 @@ export const DeployModelModal = ({
           <Box float="right">
             <SpaceBetween direction="horizontal" size="xs">
               <Button variant="link" onClick={()=> setVisible(false)}>Cancel</Button>
-              <Button variant="primary" onClick={onDeloyConfirm}>Confirm</Button>
+              <Button variant="primary" onClick={onDeloyConfirm}
+                loading = {loading}
+                disabled={loading}
+              >Confirm</Button>
             </SpaceBetween>
           </Box>
         }

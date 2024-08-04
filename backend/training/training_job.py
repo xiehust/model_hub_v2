@@ -17,7 +17,7 @@ from utils.get_factory_config import get_model_path_by_name
 from utils.llamafactory.extras.constants import DEFAULT_TEMPLATE
 import dotenv
 import os
-from utils.config import boto_sess,role,default_bucket,sagemaker_session,LORA_BASE_CONFIG,DEEPSPEED_BASE_CONFIG_MAP
+from utils.config import boto_sess,role,default_bucket,sagemaker_session,LORA_BASE_CONFIG,DEEPSPEED_BASE_CONFIG_MAP,FULL_BASE_CONFIG
 dotenv.load_dotenv()
 
 logger = setup_logger('training_job.py', log_file='processing_engine.log', level=logging.INFO)
@@ -167,7 +167,7 @@ class TrainingJobExcutor(BaseModel):
 
         max_time = 3600*24
         base_model_name = model_id.split('/')[-1]
-        base_job_name = base_model_name
+        base_job_name = base_model_name.replace('.','-')
         
         output_s3_path = f's3://{default_bucket}/{base_job_name}/{self.job_id}/'
         environment = {
@@ -231,7 +231,7 @@ class TrainingJobExcutor(BaseModel):
                                 data_keys=data_keys,
                                 job_payload=job_payload,
                                  model_id = model_id,
-                                 base_config =LORA_BASE_CONFIG)
+                                 base_config =LORA_BASE_CONFIG if job_payload['finetuning_method'] == 'lora' else FULL_BASE_CONFIG)
             
             merge_lora = '1' if job_payload['finetuning_method'] == 'lora' else '0'
             self.create_training(sg_config=sg_config,

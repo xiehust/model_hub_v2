@@ -5,6 +5,7 @@ import { TopNavigation, ButtonDropdownProps } from '@cloudscape-design/component
 
 import '../../styles/base.scss';
 import '../../styles/top-navigation.scss';
+import {useAuthUserInfo} from './use-auth';
 
 import logo from '../../resources/smlogo.svg';
 import { useTranslation, Trans } from 'react-i18next';
@@ -31,11 +32,9 @@ const profileActions = [
 
 export const TopNav = () => {
 
-  // const handleClick = (event:CancelableEventHandler<ButtonDropdownProps.ItemClickDetails>): void => {
-  //   console.log("clicked");
-  // }
+  const userInfo = useAuthUserInfo();
+  const {t,i18n} = useTranslation();
 
-  // const onItemClick: CancelableEventHandler<ButtonDropdownProps.ItemClickDetails> = { handleClick };
 
   const [modelSettingVisible, setModelSettingVisible] = useState(false);
 
@@ -79,15 +78,16 @@ export const TopNav = () => {
         },
         {
           type: 'menu-dropdown',
-          text: 'Customer name',
-          description: 'customer@example.com',
+          text: userInfo.username+"@"+userInfo.groupname,
           iconName: 'user-profile',
           onItemClick:({detail}) =>{
             if (detail.id === 'profile'){
               setModelSettingVisible(true)
             }
           },
-          items: [{ id: 'profile', text: 'Profile' }],
+          items: [{ id: 'profile', text: 'Profile' },
+            { id: "signout", text: t('signout'),href: "/signout"}
+          ],
         },
       ]}
     />

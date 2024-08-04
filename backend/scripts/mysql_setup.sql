@@ -29,3 +29,13 @@ CREATE TABLE IF NOT EXISTS EP_TABLE (
     endpoint_delete_time DATETIME,
     extra_config TEXT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+CREATE TABLE IF NOT EXISTS USER_TABLE (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(32),
+    userpwd VARCHAR(32),
+    groupname VARCHAR(32),
+    extra_config TEXT
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

@@ -153,3 +153,6 @@ class InferenceRequest(BaseModel):
     params:Dict[str,Any]
     stream: Optional[bool]= False
     
+class LoginRequest(BaseModel):
+    username:str
+    password:str

@@ -57,22 +57,7 @@ export const LogsPanel = ({jobRunName,jobId,jobStatus}) => {
                 stop = true;
                 setLogs(prev => [...prev, JSON.stringify(err)])
             }
- 
-            // remotePost(params, 'fetch_training_log').then((res) => {
-            //     setLoading(false);
-            //     console.log('logs:',res.next_forward_token);
-            //     nextTokenRef.current = res.next_forward_token
-            //     params.next_token = res.next_forward_token;
-            //     if (res.log_events.length ){
-            //         setLogs((prev) => prev.concat(sortEventsByTimestamp(res.log_events)));
-            //         setRows(logs.length > defaultRows ?
-            //             (logs.length > defaultMaxRows ? defaultMaxRows :logs.length) : defaultRows);
-            //     }
-    
-            // }).catch(err => {
-            //     setLoading(false);
-            //     setLogs(prev => [...prev, JSON.stringify(err)])
-            // });
+
 
     }, [nextTokenRef.current]);
 

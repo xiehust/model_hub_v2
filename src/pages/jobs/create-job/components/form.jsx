@@ -22,20 +22,20 @@ export function FormHeader({ readOnly,loadHelpPanelContent }) {
   );
 }
 
-function FormActions({ onCancelClick ,readOnly}) {
+function FormActions({ onCancelClick ,loading,readOnly}) {
   return (
     <SpaceBetween direction="horizontal" size="xs">
       <Button variant="link" onClick={onCancelClick}>
         Cancel
       </Button>
-      {!readOnly&&<Button data-testid="create" variant="primary">
+      {!readOnly&&<Button loading={loading} data-testid="create" variant="primary">
         Create
       </Button>}
     </SpaceBetween>
   );
 }
 
-function BaseForm({ content, readOnly,onCancelClick, errorText = null, onSubmitClick, header }) {
+function BaseForm({ content, readOnly,onCancelClick,loading, errorText = null, onSubmitClick, header }) {
   return (
     <form
       onSubmit={event => {
@@ -47,7 +47,7 @@ function BaseForm({ content, readOnly,onCancelClick, errorText = null, onSubmitC
     >
       <Form
         header={header}
-        actions={<FormActions onCancelClick={onCancelClick} readOnly={readOnly}/>}
+        actions={<FormActions onCancelClick={onCancelClick} readOnly={readOnly} loading={loading}/>}
         errorText={errorText}
         errorIconAriaLabel="Error"
       >
@@ -90,6 +90,8 @@ const fieldsToValidate = [
 export const FormWithValidation = ({ 
   loadHelpPanelContent, 
   header,
+  loading,
+  setLoading,
   setNotificationData,
   data,
   _setData,
@@ -134,6 +136,7 @@ export const FormWithValidation = ({
   }
   const onSubmit = () => {
     console.log(data);
+
     const newErrors = { ...errors };
     let validatePass = true;
     fieldsToValidate.forEach(attribute => {
@@ -147,8 +150,10 @@ export const FormWithValidation = ({
     setErrors(newErrors);
     focusTopMostError(newErrors);
     // console.log(validatePass);
+    
     if (validatePass) {
       //submit 
+      setLoading(true);
       const formData = {
         job_name: data.job_name,
         job_type: data.stage,
@@ -191,11 +196,13 @@ export const FormWithValidation = ({
         then(res => {
           setDisplayNotify(true);
           setNotificationData({ status: 'success', content: `Create job:${res.response_id}` });
+          setLoading(false);
           navigate('/jobs')
         })
         .catch(err => {
           setDisplayNotify(true);
           setNotificationData({ status: 'error', content: `Create job failed` });
+          setLoading(false);
         })
     }
   };
@@ -243,6 +250,7 @@ export const FormWithValidation = ({
           {readOnly&&<LogsPanel jobRunName={data?.job_run_name} jobStatus={data?.job_status} jobId={data?.job_id}/>}
         </SpaceBetween>
       }
+      loading={loading}
       onSubmitClick={onSubmit}
       readOnly={readOnly}
       onCancelClick={onCancelClick}

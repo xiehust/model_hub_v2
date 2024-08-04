@@ -7,7 +7,7 @@ import os
 sys.path.append('./')
 from pydantic import BaseModel
 from model.data_model import JobInfo, JobStatus,EndpointStatus
-from utils.config import MYSQL_CONFIG,JOB_TABLE,EP_TABLE
+from utils.config import MYSQL_CONFIG,JOB_TABLE,EP_TABLE,USER_TABLE
 from datetime import datetime
 
 def singleton(cls):
@@ -91,7 +91,7 @@ class DatabaseWrapper(BaseModel):
         with self.connection_pool.get_connection() as connection:
             with connection.cursor() as cursor:  
                 ## 临时修改成job_status判断条件，可以从api删除，方便调试              
-                cursor.execute(f"DELETE FROM {JOB_TABLE} WHERE job_id = %s AND ( job_status != 'RUNNING1' OR job_status != 'SUCCESS1')", (id,))
+                cursor.execute(f"DELETE FROM {JOB_TABLE} WHERE job_id = %s", (id,))
                 connection.commit()
                 return True
 
@@ -167,7 +167,7 @@ class DatabaseWrapper(BaseModel):
         with self.connection_pool.get_connection() as connection:
             with connection.cursor() as cursor:
                 if query_terms:
-                    query_string = f"SELECT * FROM {EP_TABLE} WHERE "
+                    query_string = f"SELECT * FROM {EP_TABLE} WHERE endpoint_status <> 'TERMINATED' AND "
                     query_params = []
                     for key, value in query_terms.items():
                         query_string += f"{key} = %s AND "
@@ -175,7 +175,7 @@ class DatabaseWrapper(BaseModel):
                     query_string = query_string[:-4]
                     cursor.execute(query_string, tuple(query_params))
                 else:
-                    cursor.execute(f"SELECT * FROM {EP_TABLE} LIMIT %s OFFSET %s", (page_size, offset))
+                    cursor.execute(f"SELECT * FROM {EP_TABLE} WHERE endpoint_status <> 'TERMINATED' LIMIT %s OFFSET %s", (page_size, offset))
                 return cursor.fetchall()
             
     def count_endpoints(self, query_terms: Dict[str, Any] = None):
@@ -184,6 +184,26 @@ class DatabaseWrapper(BaseModel):
                 cursor.execute(f"SELECT COUNT(*) FROM {EP_TABLE}")
                 return cursor.fetchone()[0]
                 
-    
+    def query_users(self, username:str):
+        with self.connection_pool.get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(f"SELECT userpwd, groupname FROM {USER_TABLE} WHERE username = %s",(username,))
+                return cursor.fetchone()
+            
+    def delete_users(self, username:str):
+        with self.connection_pool.get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(f"DELETE FROM {USER_TABLE} WHERE username = %s",(username,))
+                connection.commit()
+            
+    def add_user(self, username:str,password:str,groupname:str,extra_config = {"create_time": datetime.now().strftime('%Y-%m-%d %H:%M:%S')}):
+        with self.connection_pool.get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                        f"INSERT INTO {USER_TABLE} (username, userpwd,groupname, extra_config ) VALUES (%s, %s, %s,%s )", 
+                        (username, password, groupname,json.dumps(extra_config, ensure_ascii=False),)
+                    )
+                connection.commit()
+        
     def close(self):
         self.connection_pool.close()
