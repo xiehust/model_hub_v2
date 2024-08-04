@@ -23,7 +23,8 @@ if os.environ.get('profile'):
     )
 else :
     boto_sess = boto3.Session(
-        profile_name=os.environ.get('profile'),
+         aws_access_key_id=os.environ['AK'],
+        aws_secret_access_key=os.environ['SK'],
         region_name=DEFAULT_REGION
     )
     
