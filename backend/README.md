@@ -156,10 +156,16 @@ http {
 sudo ln -s /etc/nginx/sites-available/modelhub /etc/nginx/sites-enabled/ 
 sudo nginx -t 
 sudo systemctl restart nginx
-
-
-### Run
-```bash
-python3 server.py --host 0.0.0.0 --port 8000
 ```
 
+### 后台启动进程
+1. 进入backend目录下启动web server进程  
+```bash
+cd backend
+pm2 start server.py --name "modelhub-server" --interpreter python3 -- --host 0.0.0.0 --port 8000
+```
+2. 启动任务处理引擎
+- 可选，前台启动sever进程
+```bash
+pm2 start processing_engine/main.py --name "modelhub-engine" --interpreter python3
+```
