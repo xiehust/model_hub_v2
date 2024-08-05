@@ -29,7 +29,14 @@ else :
     )
     
 print(f"region:{boto_sess.region_name}")
-role = os.environ.get('role')
+
+default_role  = sagemaker.get_execution_role()
+print(f"default_role:{default_role}")
+
+role = os.environ.get('role') if os.environ.get('role') else default_role
+print(f"sagemaker role:{role}")
+
+
 sagemaker_session =  sagemaker.session.Session(boto_session=boto_sess) #sagemaker.session.Session()
 region = sagemaker_session.boto_region_name
 default_bucket = sagemaker_session.default_bucket()
