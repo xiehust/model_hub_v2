@@ -40,6 +40,11 @@ policy: AmazonSageMakerFullAccess
     ]
 }
 ```
+- ssh 到ec2 instance
+注意使用--recurse-submodule下载代码  
+```bash
+git clone --recurse-submodule https://github.com/xiehust/model_hub_v2.git
+```
 - 保存之后，复制sagemaker execution role的arn，在backend/.env中配置
 复制env.sample 文件，修改里面的内容，并保存为.env
 ```bash

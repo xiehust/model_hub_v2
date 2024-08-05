@@ -1,10 +1,6 @@
 # 后端环境安装
 
 ## 1.安装 python virtual env
-- 进入backend目录
-```bash
-cd backend
-```
 - 安装miniconda
 ```bash
 wget  https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
@@ -15,7 +11,12 @@ conda create -n py311 python=3.11
 conda activate py311
 ```
 
+
 ## 2.安装 requirements
+- 进入backend目录
+```bash
+cd backend
+```
 ```bash
 pip install -r requirements.txt
 ```
@@ -30,8 +31,7 @@ sudo apt install docker python3-pip git -y && pip3 install -U awscli && pip inst
 
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-sudo apt update
-sudo apt install docker-ce docker-ce-cli containerd.io
+sudo apt install docker-ce docker-ce-cli containerd.io -y
 # Configure components
 sudo systemctl enable docker && sudo systemctl start docker && sudo usermod -aG docker $USER
 
