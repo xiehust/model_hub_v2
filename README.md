@@ -1,4 +1,4 @@
-## 环境安装
+## 1.环境安装
 - 硬件需求：一台ec2 Instance, m5.xlarge, 200GB EBS storage
 - os需求：ubuntu 22.04
 - 配置权限：
@@ -11,7 +11,8 @@ policy: AmazonSageMakerFullAccess
 - ![alt text](./assets/image_iamrole3.png)
 
 - 把ec2 instance attach到role
-- ![alt text](./assets/image.png)
+- ![alt text](./assets/bindrole.png)  
+
 
 2. 创建一个AmazonSageMaker service role
 ![alt text](./assets/image-1.png)
@@ -55,7 +56,7 @@ api_keys=
 HUGGING_FACE_HUB_TOKEN=
 ```
 
-## 启动前端
+## 2.部署前端
 1. 安装nodejs 18
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
@@ -71,7 +72,7 @@ REACT_APP_API_KEY=随机给一个key
 
 
 
-3. 启动web
+3. 启动web page
 - 安装yarn
 ```bash
 yarn install
@@ -82,7 +83,7 @@ yarn install
 sudo yarn global add pm2
 pm2 start pm2run.config.js 
 ```
-- 以下是其他的管理命令:
+- 以下是其他的管理命令(作为参考，不用执行):
 ```bash
 pm2 list
 pm2 stop modelhub
@@ -90,5 +91,9 @@ pm2 restart modelhub
 pm2 delete modelhub
 ```
 
-## 后端配置
+## 3.后端配置
 请见[后端配置](./backend/README.md)
+
+## 4.启动前端
+- 以上都部署完成后，前端启动之后，可以通过浏览器访问http://{ip}:3000访问前端
+- 如果需要做端口转发，则参考后端配置中的nginx配置部分

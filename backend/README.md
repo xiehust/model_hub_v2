@@ -1,10 +1,11 @@
-## 后端环境安装
+# 后端环境安装
+
+## 1.安装 python virtual env
 - 进入backend目录
 ```bash
 cd backend
 ```
-### 安装 python virtual env
-
+- 安装miniconda
 ```bash
 wget  https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 chmod +x  Miniconda3-latest-Linux-x86_64.sh
@@ -14,16 +15,13 @@ conda create -n py311 python=3.11
 conda activate py311
 ```
 
-### 安装 requirements
+## 2.安装 requirements
 ```bash
 pip install -r requirements.txt
 ```
 
-### 安装配置MYSQL
-- Install Docker
-Log in to the EC2 instance using SSH command as the ubuntu user or use the AWS EC2 Instance Connect feature in the EC2 console to log in to the command line. 
-
-In the session, execute the following commands.
+## 3.配置MYSQL
+- 安装Docker
  **Note: Execute each command one line at a time.**
 ```bash  
 # Install components
@@ -55,19 +53,19 @@ docker run -d \
   mysql:8.0
 ```
 
-- 验证是否成功:
+- 等待1-2分钟之后，验证是否成功:
 ```bash
 docker ps
 ```
 
-- 进入scripts目录，执行以下命令创建数据库:
+- 进入backend/scripts目录，执行以下命令创建数据库:
 ```bash
 cd scripts 
 
 docker exec hub-mysql sh -c "mysql -u root -p1234560 -D llm  < /opt/data/mysql_setup.sql"
 ```
 
-#### 其他命令（仅供参考，不用执行）
+### 其他命令（仅供参考，不用执行）
 - To login in cmd line
 ```bash
 docker exec -it hub-mysql mysql -u root -p1234560
@@ -88,13 +86,28 @@ docker rm hub-mysql
 docker start hub-mysql
 ```
 
-### 添加用户
+## 3.添加用户
 ```bash
 python3 users/add_user.py
 ```
-添加 demo_user/demo_user 默认用户
+请自行添加用户民和密码，并保存到安全的位置。
 
-### 安装nginx
+
+## 4.后台启动进程
+1. 进入backend目录下启动web server进程  
+```bash
+cd backend
+pm2 start server.py --name "modelhub-server" --interpreter python3 -- --host 0.0.0.0 --port 8000
+```
+2. 启动任务处理引擎
+- 可选，前台启动sever进程
+```bash
+pm2 start processing_engine/main.py --name "modelhub-engine" --interpreter python3
+```
+
+
+
+## 5.安装nginx（可选）
 - 安装nginx
 ```bash
 sudo apt update 
@@ -156,16 +169,4 @@ http {
 sudo ln -s /etc/nginx/sites-available/modelhub /etc/nginx/sites-enabled/ 
 sudo nginx -t 
 sudo systemctl restart nginx
-```
-
-### 后台启动进程
-1. 进入backend目录下启动web server进程  
-```bash
-cd backend
-pm2 start server.py --name "modelhub-server" --interpreter python3 -- --host 0.0.0.0 --port 8000
-```
-2. 启动任务处理引擎
-- 可选，前台启动sever进程
-```bash
-pm2 start processing_engine/main.py --name "modelhub-engine" --interpreter python3
 ```
