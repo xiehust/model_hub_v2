@@ -97,9 +97,9 @@ def deploy_endpoint(job_id:str,engine:str,instance_type:str,quantize:str,enable_
     
     # Fetch the uri of the LMI container that supports vLLM, LMI-Dist, HuggingFace Accelerate backends
     if engine == 'trt-llm':
-        lmi_image_uri = image_uris.retrieve(framework="djl-tensorrtllm", version="0.28.0", region=DEFAULT_REGION)
+        lmi_image_uri = image_uris.retrieve(framework="djl-tensorrtllm", version="0.29.0", region=DEFAULT_REGION)
     else:
-        lmi_image_uri = image_uris.retrieve(framework="djl-lmi", version="0.28.0", region=DEFAULT_REGION)
+        lmi_image_uri = image_uris.retrieve(framework="djl-lmi", version="0.29.0", region=DEFAULT_REGION)
 
     env={
         "HF_MODEL_ID": model_s3_path,
@@ -111,7 +111,8 @@ def deploy_endpoint(job_id:str,engine:str,instance_type:str,quantize:str,enable_
     if engine == 'trt-llm':
         env['OPTION_MAX_NUM_TOKENS'] = '50000'
         env['OPTION_ENABLE_KV_CACHE_REUSE'] = "true"
-
+    if engine == 'vllm':
+        env['OPTION_MAX_MODEL_LEN'] = '12288' #12k cache
 
     
     create_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')

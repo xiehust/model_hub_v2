@@ -3,6 +3,6 @@ module.exports = {
       name: "modelhub",
       script: "yarn",
       args: "start",
-      interpreter: "/bin/bash"
+      interpreter: "node"
     }]
   }

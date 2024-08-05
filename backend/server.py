@@ -99,7 +99,7 @@ def create_error_response(code: int, message: str) -> JSONResponse:
 async def validation_exception_handler(request, exc):
     return create_error_response(400, str(exc))
 
-@app.get("/ping")
+@app.get("/")
 async def ping():
     return APIRequestResponse(message='ok')
 

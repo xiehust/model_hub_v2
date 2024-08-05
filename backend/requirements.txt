@@ -12,3 +12,4 @@ mysql-connector-python
 sagemaker
 transformers
 PyJWT
+sentencepiece
