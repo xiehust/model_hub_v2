@@ -2,7 +2,10 @@
 - 硬件需求：一台ec2 Instance, m5.xlarge, 200GB EBS storage
 - os需求：ubuntu 22.04
 - 配置权限：
-- 在IAM中创建一个role，select trust type: AWS service, service: EC2, policy: AmazonSageMakerFullAccess
+1. 在IAM中创建一个ec2 role.
+- select trust type: AWS service, service: EC2, 
+- 添加以下2个服务的权限，AmazonSageMakerFullAccess， CloudWatchLogsFullAccess
+policy: AmazonSageMakerFullAccess
 - ![alt text](./assets/image_iamrole.png)
 - ![alt text](./assets/image_iamrole2.png)
 - ![alt text](./assets/image_iamrole3.png)
@@ -10,6 +13,47 @@
 - 把ec2 instance attach到role
 - ![alt text](./assets/image.png)
 
+2. 创建一个AmazonSageMaker service role
+![alt text](./assets/image-1.png)
+![alt text](./assets/image-2.png)
+
+- 找到刚才的role，创建一个inline policy
+- ![alt text](./assets/image-3.png)
+- ![alt text](./assets/image-4.png)
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:DeleteObject",
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "arn:aws:s3:::*"
+            ]
+        }
+    ]
+}
+```
+- 保存之后，复制sagemaker execution role的arn，在backend/.env中配置
+复制env.sample 文件，修改里面的内容，并保存为.env
+```bash
+AK=
+SK=
+profile=
+region=us-east-1
+role=arn:aws:iam::
+db_host=127.0.0.1
+db_name=llm
+db_user=llmdata
+db_password=llmdata
+api_keys=
+HUGGING_FACE_HUB_TOKEN=
+```
 
 ## 启动前端
 1. 安装nodejs 18
