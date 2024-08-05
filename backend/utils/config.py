@@ -28,12 +28,13 @@ else :
         region_name=DEFAULT_REGION
     )
     
-print(f"region:{boto_sess.region_name}")
+# print(f"region:{boto_sess.region_name}")
 
-default_role  = sagemaker.get_execution_role()
-print(f"default_role:{default_role}")
+# default_role  = sagemaker.get_execution_role()
+# print(f"default_role:{default_role}")
 
-role = os.environ.get('role') if os.environ.get('role') else default_role
+# role = os.environ.get('role') if os.environ.get('role') else default_role
+role = os.environ.get('role')
 print(f"sagemaker role:{role}")
 
 
