@@ -67,7 +67,7 @@ const defaultData = {
   }
 
   const SelectModelName = ({ data, setData, readOnly }:SelectModelProps) => {
-    console.log(data)
+    // console.log(data)
     const [loadStatus, setLoadStatus] = useState<any>("loading");
     const [items, setItems] = useState([]);
     // const initState = data.job_payload ? { label: data.job_payload.model_name, value: data.job_payload.model_name } : {};
@@ -184,7 +184,7 @@ export const DeployModelModal = ({
     // console.log(selectedItems)
     const onDeloyConfirm =()=>{
         setLoading(true);
-        const jobId = selectedItems[0]?.job_id ?? "";
+        const jobId = selectedItems[0]?.job_id ?? "N/A(Not finetuned)";
         const fromData = {...data,job_id:jobId}
         remotePost(fromData, 'deploy_endpoint').
         then(res => {

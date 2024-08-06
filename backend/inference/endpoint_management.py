@@ -87,7 +87,7 @@ def delete_endpoint(endpoint_name:str) ->bool:
         
 # 如果job_id="",则使用model_name原始模型
 def deploy_endpoint(job_id:str,engine:str,instance_type:str,quantize:str,enable_lora:bool,model_name:str) -> Dict[bool,str]:
-    if not job_id == '':
+    if not job_id == 'N/A(Not finetuned)':
         jobinfo = sync_get_job_by_id(job_id)
         if not jobinfo.job_status == JobStatus.SUCCESS:
             return CommonResponse(response_id=job_id,response={"error": "job is not ready to deploy"})
@@ -129,14 +129,13 @@ def deploy_endpoint(job_id:str,engine:str,instance_type:str,quantize:str,enable_
     
     endpoint_name = sagemaker.utils.name_from_base(model_name).replace('.','-').replace('_','-')
 
-
     # Create the SageMaker Model object. In this example we let LMI configure the deployment settings based on the model architecture  
     model = Model(
             image_uri=lmi_image_uri,
             role=role,
             name=endpoint_name,
             sagemaker_session=sagemaker_session,
-            env=env
+            env=env,
     )
     try:
         model.deploy(
