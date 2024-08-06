@@ -56,7 +56,8 @@ const ENGINE : RadioGroupProps.RadioButtonDefinition[]= [
     { label:'vllm',value:'vllm'},
     { label:'lmi-dist',value:'lmi-dist'},
     { label:'trt-llm',value:'trt-llm'},
-    { label:'HF accelerate',value:'scheduler'}
+    { label:'HF accelerate',value:'scheduler'},
+    // { label:'HF accelerate',value:'auto'}
 ]
 
 const defaultData = {

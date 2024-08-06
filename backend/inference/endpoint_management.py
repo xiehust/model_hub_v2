@@ -72,11 +72,12 @@ def get_endpoint_status(endpoint_name:str) ->EndpointStatus:
 def delete_endpoint(endpoint_name:str) ->bool:
     client = boto_sess.client('sagemaker')
     try:
-        database.update_endpoint_status(
-                endpoint_name=endpoint_name,
-                endpoint_status=EndpointStatus.TERMINATED,
-                endpoint_delete_time= datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            )
+        # database.update_endpoint_status(
+        #         endpoint_name=endpoint_name,
+        #         endpoint_status=EndpointStatus.TERMINATED,
+        #         endpoint_delete_time= datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        #     )
+        database.delete_endpoint(endpoint_name=endpoint_name)
         client.delete_endpoint(EndpointName=endpoint_name)
         client.delete_endpoint_config(EndpointConfigName=endpoint_name)
         client.delete_model(ModelName=endpoint_name)

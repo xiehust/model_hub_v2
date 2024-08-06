@@ -132,6 +132,12 @@ class DatabaseWrapper(BaseModel):
                 cursor.execute(f"UPDATE {EP_TABLE} SET endpoint_status = %s,endpoint_delete_time = %s, extra_config = %s WHERE endpoint_name = %s", 
                                (endpoint_status.value,endpoint_delete_time,extra_config,endpoint_name))
                 connection.commit()
+    def delete_endpoint(self,  endpoint_name:str,) -> bool:
+        with self.connection_pool.get_connection() as connection:
+            with connection.cursor() as cursor:  
+                cursor.execute(f"DELETE FROM {EP_TABLE} WHERE endpoint_name = %s", (endpoint_name,))
+                connection.commit()
+                return True
 
     def create_endpoint(self,  
                         job_id:str,
