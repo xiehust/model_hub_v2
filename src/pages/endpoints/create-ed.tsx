@@ -1,7 +1,8 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
 import React ,{useEffect, useState} from 'react';
-import { Button, Modal, Box, RadioGroup,RadioGroupProps,FormField, Toggle,SpaceBetween,Select,SelectProps } from '@cloudscape-design/components';
+import { Button, Modal, Box, RadioGroup,RadioGroupProps,FormField,
+   Toggle,SpaceBetween,Select,SelectProps } from '@cloudscape-design/components';
 import { remotePost } from '../../common/api-gateway';
 
 interface PageHeaderProps {
@@ -22,10 +23,18 @@ interface SelectInstanceTypeProps {
     // refs?:Record<string,React.RefObject<any>>;
 }
 
+interface SelectModelProps {
+  data:any;
+  setData: (value: any) => void;
+  readOnly: boolean;
+  // refs?:Record<string,React.RefObject<any>>;
+}
+
 const defaultErrors={
     instance_type:null,
     engine:null,
-    enable_lora:null
+    enable_lora:null,
+    model_name:null
 }
 
 
@@ -35,6 +44,9 @@ const  INSTANCE_TYPES : SelectProps.Option[] =[
     { label: 'ml.g5.2xlarge', value: 'ml.g5.2xlarge' },
     { label: 'ml.g5.12xlarge', value: 'ml.g5.12xlarge' },
     { label: 'ml.g5.48xlarge', value: 'ml.g5.48xlarge' },
+    { label: 'ml.p3.2xlarge', value: 'ml.p3.2xlarge' },
+    { label: 'ml.p3.8xlarge', value: 'ml.p3.8xlarge' },
+    { label: 'ml.p3.16xlarge', value: 'ml.p3.16xlarge' },
     { label: 'ml.p4d.24xlarge', value: 'ml.p4d.24xlarge' },
     { label: 'ml.p4de.24xlarge', value: 'ml.p4de.24xlarge' },
     { label: 'ml.p5.48xlarge', value: 'ml.p5.48xlarge' }
@@ -51,6 +63,56 @@ const defaultData = {
     instance_type:'ml.g5.2xlarge',
     engine:'vllm',
     enable_lora:false,
+    model_name:undefined
+  }
+
+  const SelectModelName = ({ data, setData, readOnly }:SelectModelProps) => {
+    console.log(data)
+    const [loadStatus, setLoadStatus] = useState<any>("loading");
+    const [items, setItems] = useState([]);
+    // const initState = data.job_payload ? { label: data.job_payload.model_name, value: data.job_payload.model_name } : {};
+    const [selectOption, setSelectOption] = useState({}); 
+    useEffect(() => {
+      if (data.model_name) {
+        setSelectOption({ label: data.model_name, value: data.model_name })
+        setData((pre:any) =>({...pre, model_name: data.model_name }))
+      }
+    }, [data.model_name])
+    const handleLoadItems = async ({
+      detail: { },
+    }) => {
+      setLoadStatus("loading");
+      try {
+        const data = await remotePost({ config_name: 'model_name' }, 'get_factory_config');
+        const items = data.response.body.map((it:any) => ({
+          model_name: it.model_name,
+          model_path: it.model_path,
+        }));
+        setItems(items);
+        setLoadStatus("finished");
+      } catch (error) {
+        console.log(error);
+        setLoadStatus("error");
+      }
+    };
+    return (
+      <Select
+        statusType={loadStatus}
+        onLoadItems={handleLoadItems}
+        disabled={readOnly}
+        selectedOption={selectOption}
+        onChange={({ detail }) => {
+          setSelectOption(detail.selectedOption);
+          setData((pre:any)  => ({ ...pre,model_name: detail.selectedOption.value }))
+        }}
+        options={items.map(({ model_name, model_path }) => ({
+          label: model_name,
+          value: model_name,
+          tags: [model_path]
+        }))}
+        selectedAriaLabel="Selected"
+      />
+    )
   }
 const SelectInstanceType = ({ data, setData, readOnly }:SelectInstanceTypeProps)  => {
     const [selectOption, setSelectOption] = useState<SelectProps.Option| null>(INSTANCE_TYPES[2]);
@@ -113,10 +175,16 @@ export const DeployModelModal = ({
     const [errors, _setErrors] = useState(defaultErrors);
     const [data, setData] = useState(defaultData);
     const [loading, setLoading] = useState(false);
-    console.log(data)
+    // const [modelName,setModelName] = useState(selectedItems[0].model_name);
+    useEffect(()=>{
+      setData((pre:any) =>({...pre, model_name: selectedItems[0]?.job_payload?.model_name}));
+    },[])
+    const modelNameReadOnly = selectedItems[0]?.job_payload?.model_name ? true : false;
+    
+    // console.log(selectedItems)
     const onDeloyConfirm =()=>{
         setLoading(true);
-        const jobId = selectedItems[0].job_id
+        const jobId = selectedItems[0]?.job_id ?? "";
         const fromData = {...data,job_id:jobId}
         remotePost(fromData, 'deploy_endpoint').
         then(res => {
@@ -152,6 +220,15 @@ export const DeployModelModal = ({
         }
         header="Deploy model as endpoint"
       ><SpaceBetween size="l">
+          <FormField
+            label="Model Name"
+            stretch={false}
+            description="select a supported Model"
+            i18nStrings={{ errorIconAriaLabel: 'Error' }}
+          >
+            <SelectModelName data={data} setData={setData} readOnly={modelNameReadOnly} />
+          </FormField>
+
           <FormField
             label="Instance Type"
             description="Select a Instance type to deploy the model."

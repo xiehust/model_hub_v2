@@ -111,6 +111,7 @@ class S3ObjectsResponse(BaseModel):
     
 class DeployModelRequest(BaseModel):
     job_id:str
+    model_name:Optional[str] = None
     engine:Literal["vllm","scheduler","lmi-dist","trt-llm"]
     instance_type:str
     quantize:str = ''

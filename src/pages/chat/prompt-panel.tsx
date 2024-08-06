@@ -109,6 +109,7 @@ const ExpandableSettingPanel = () => {
       const epInfo = response.endpoints.map((item:any)=>({model_name:item.model_name,
                                           endpoint_name:item.endpoint_name,
                                         engine:item.engine,
+                                        model_path:item.model_s3_path,
                                         instance_type:item.instance_type,}));
       setEndpointsInfo(epInfo);
       setLoadStatus("finished");
@@ -149,11 +150,13 @@ const ExpandableSettingPanel = () => {
             onChange={({ detail }) => {
               setepSelectedOption(detail.selectedOption);
               setEndpointName(detail.selectedOption.value);
+
               setModelName(detail.selectedOption.tags&&detail.selectedOption.tags[0]);
             }}
             options={endpointsInfo.map( (item) => ({label:item.endpoint_name,
               value:item.endpoint_name,
-              tags:[item.model_name,item.instance_type,item.engine]
+              tags:[item.model_path.startsWith("s3://")?'Finetuned':'Original', 
+                item.model_name,item.instance_type,item.engine]
             }))}
             selectedAriaLabel="Selected"
           />
