@@ -145,7 +145,7 @@ def map_sagemaker_status_to_job_status(sagemaker_status):
     }
     
     # Default to ERROR if status is not recognized
-    return status_mapping.get(sagemaker_status, JobStatus.ERROR)
+    return status_mapping.get(sagemaker_status)
 
 def get_job_status(job_id:str):
     results = database.get_jobs_status_by_id(job_id)
