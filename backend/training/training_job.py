@@ -192,7 +192,7 @@ class TrainingJobExcutor(BaseModel):
                                     script_mode=True,
                                     instance_count=instance_num,
                                     instance_type=instance_type,
-                                    enable_remote_debug=True,
+                                    # enable_remote_debug=True,
                                     # keep_alive_period_in_seconds=600,
                                     max_run=max_time)
         

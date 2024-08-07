@@ -43,6 +43,7 @@ vim .env
 * 2.修改region为实际region
 * 3.修改role为之前在IAM中创建的sagemaker execution role的arn
 * 4.修改api_keys为上一级目录中.env中的api key，前后端保持一致
+* 5.有些模型(如LLaMA等)需要提供HUGGING_FACE_HUB_TOKEN，请在.env中添加
 ```bash
 AK=
 SK=
