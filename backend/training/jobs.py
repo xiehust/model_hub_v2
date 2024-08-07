@@ -144,7 +144,6 @@ def map_sagemaker_status_to_job_status(sagemaker_status):
         'Stopped': JobStatus.STOPPED
     }
     
-    # Default to ERROR if status is not recognized
     return status_mapping.get(sagemaker_status)
 
 def get_job_status(job_id:str):
