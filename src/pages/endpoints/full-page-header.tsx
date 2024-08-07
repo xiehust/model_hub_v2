@@ -14,6 +14,7 @@ interface FullPageHeaderProps extends HeaderProps {
   onInfoLinkClick?: () => void;
   onDelete?: () => void;
   onRefresh?: () => void;
+  onDeploy?: () => void;
 }
 // || selectedItems[0].endpoint_status !== 'INSERVICE'
 export function FullPageHeader({
@@ -27,13 +28,14 @@ export function FullPageHeader({
   onInfoLinkClick,
   onDelete,
   onRefresh,
+  onDeploy,
   ...props
 }: FullPageHeaderProps) {
   // console.log("selectedItems",selectedItems)
   return (
     <Header
       variant="awsui-h1-sticky"
-      // info={onInfoLinkClick && <InfoLink onFollow={onInfoLinkClick} />}
+
       actions={
         <SpaceBetween size="xs" direction="horizontal">
           {extraActions}
@@ -43,7 +45,10 @@ export function FullPageHeader({
           <Button data-testid="header-btn-delete" disabled={selectedItemsCount === 0 } onClick={onDelete}>  
             Delete
           </Button>
-          <Button data-testid="header-btn-create" variant="primary" disabled={selectedItemsCount === 0 || selectedItems&&selectedItems[0]?.endpoint_status !== 'INSERVICE' } href={`/chat/${selectedItems&&selectedItems[0]?.endpoint_name}`}>
+          <Button data-testid="header-btn-create" onClick={onDeploy}>  
+            Create New
+          </Button>
+          <Button data-testid="header-btn-chat" variant="primary" disabled={selectedItemsCount === 0 || selectedItems&&selectedItems[0]?.endpoint_status !== 'INSERVICE' } href={`/chat/${selectedItems&&selectedItems[0]?.endpoint_name}`}>
             {createButtonText}
           </Button>
         </SpaceBetween>

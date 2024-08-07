@@ -21,6 +21,8 @@ import { useDistributions } from './hooks';
 import { TopNav } from '../commons/top-nav';
 import { remotePost } from '../../common/api-gateway';
 import {DeleteModelModal} from '../endpoints/delete-ed';
+import {DeployModelModal} from '../endpoints/create-ed';
+
 import '../../styles/base.scss';
 
 function ServerSideTable({
@@ -38,8 +40,8 @@ function ServerSideTable({
   const [sortingColumn, setSortingColumn] = useState(columnDefinitions[0]);
   const [refresh,setRefresh] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [deployVisible, setDeployVisible] = useState(false);
   const [selectedItems, setSelectedItems] = useState([]);
-  const [data,setData] = useState();
   const { pageSize } = preferences;
   const params = {
     pagination: {
@@ -79,11 +81,16 @@ function ServerSideTable({
     setRefresh((prev)=>!prev);
   };
 
+  const onDeploy =()=>{
+    setDeployVisible(true);
+  }
 
   return (
     <div>
     {visible&&<DeleteModelModal setDisplayNotify={setDisplayNotify} setNotificationData={setNotificationData}
     selectedItems={selectedItems} setVisible={setVisible} visible={visible}/>}
+    {deployVisible&&<DeployModelModal setDisplayNotify={setDisplayNotify} setNotificationData={setNotificationData}
+    selectedItems={selectedItems} setVisible={setDeployVisible} visible={deployVisible}/>}
 
     <Table
       enableKeyboardNavigation={true}
@@ -112,6 +119,7 @@ function ServerSideTable({
           selectedItemsCount={selectedItems.length}
           selectedItems={selectedItems}
           onDelete = {onDelete}
+          onDeploy = {onDeploy}
           setNotificationData = {setNotificationData}
           setDisplayNotify = {setDisplayNotify}
           counter={!loading && getHeaderCounterServerSideText(totalCount, selectedItems.length)}

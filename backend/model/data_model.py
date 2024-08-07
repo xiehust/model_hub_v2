@@ -111,9 +111,10 @@ class S3ObjectsResponse(BaseModel):
     
 class DeployModelRequest(BaseModel):
     job_id:str
-    engine:Literal["vllm","scheduler","lmi-dist","trt-llm"]
+    model_name:Optional[str] = None
+    engine:Literal["vllm","scheduler","auto","lmi-dist","trt-llm"]
     instance_type:str
-    quantize:str = ''
+    quantize:Optional[str] = ''
     enable_lora:Optional[bool] = False
     
 class EndpointRequest(BaseModel):

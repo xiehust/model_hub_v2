@@ -2,25 +2,24 @@
 - 硬件需求：一台ec2 Instance, m5.xlarge, 200GB EBS storage
 - os需求：ubuntu 22.04
 - 配置权限：
-1. 在IAM中创建一个ec2 role.
+1. 在IAM中创建一个ec2 role :adminrole-for-ec2.
 - select trust type: AWS service, service: EC2, 
 - 添加以下2个服务的权限，AmazonSageMakerFullAccess， CloudWatchLogsFullAccess
-policy: AmazonSageMakerFullAccess
 - ![alt text](./assets/image_iamrole.png)
 - ![alt text](./assets/image_iamrole2.png)
 - ![alt text](./assets/image_iamrole3.png)
-
 - 把ec2 instance attach到role
 - ![alt text](./assets/bindrole.png)  
 
 
-2. 创建一个AmazonSageMaker service role
+2. 创建一个AmazonSageMaker service role: sagemaker_exection_role
 ![alt text](./assets/image-1.png)
 ![alt text](./assets/image-2.png)
 
 - 找到刚才的role，创建一个inline policy
 - ![alt text](./assets/image-3.png)
 - ![alt text](./assets/image-4.png)
+- 注意，如果是中国区，需要把 "arn:aws:s3:::*"改成 "arn:aws-cn:s3:::sagemaker*"
 ```json
 {
     "Version": "2012-10-17",
@@ -34,7 +33,7 @@ policy: AmazonSageMakerFullAccess
                 "s3:ListBucket"
             ],
             "Resource": [
-                "arn:aws:s3:::*"
+                "arn:aws:s3:::sagemaker*"
             ]
         }
     ]
