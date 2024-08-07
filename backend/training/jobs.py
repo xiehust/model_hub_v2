@@ -6,7 +6,7 @@ import json
 import logging
 import asyncio
 from typing import Annotated, Sequence, TypedDict, Dict, Optional,List, Any,TypedDict
-
+from utils.config import boto_sess
 from model.data_model import CommonResponse,CreateJobsRequest, \
 ListJobsRequest,JobInfo,JobType,ListJobsResponse,GetJobsRequest, \
 JobsResponse,JobStatus,DelJobsRequest,FetchLogRequest,FetchLogResponse,JobStatusResponse
@@ -14,6 +14,8 @@ from training.training_job import fetch_log
 from db_management.database import DatabaseWrapper
 from datetime import datetime
 database = DatabaseWrapper()
+sagemaker_client = boto_sess.client('sagemaker')
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -121,18 +123,48 @@ def sync_get_job_by_id(job_id:str) -> JobInfo:
 
 def update_job_run_name_by_id(job_id:str,job_run_name:str,output_s3_path:str):
     database.update_job_run_name(job_id,job_run_name,output_s3_path)
+
+
+def get_sagemaker_training_job_status(job_name):
+    try:
+        response = sagemaker_client.describe_training_job(TrainingJobName=job_name)
+        return response['TrainingJobStatus']
+    except Exception as e:
+        print(f"Error getting training job status: {str(e)}")
+        return None
     
+
+def map_sagemaker_status_to_job_status(sagemaker_status):
+    status_mapping = {
+        'Pending': JobStatus.PENDING,
+        'InProgress': JobStatus.RUNNING,
+        'Completed': JobStatus.SUCCESS,
+        'Failed': JobStatus.ERROR,
+        'Stopping': JobStatus.TERMINATING,
+        'Stopped': JobStatus.STOPPED
+    }
+    
+    # Default to ERROR if status is not recognized
+    return status_mapping.get(sagemaker_status, JobStatus.ERROR)
+
 def get_job_status(job_id:str):
     results = database.get_jobs_status_by_id(job_id)
     job_status = None
     if results:
         job_status = results[0][0]
+        job_name = results[0][1]
+        sm_resp = get_sagemaker_training_job_status(job_name)
+        sm_status = map_sagemaker_status_to_job_status(sm_resp)
+        if not sm_status == job_status:
+            database.set_job_status(job_id,sm_status)
+            job_status = sm_status
     else:
         raise Exception(f"Job {job_id} not found")
     
     resp = JobStatusResponse(response_id=str(uuid.uuid4()), job_status=JobStatus(job_status))
     return resp
-        
+
+
     
 async def fetch_training_log(request:FetchLogRequest):
     #get job run name
