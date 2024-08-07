@@ -4,7 +4,7 @@ from datetime import timedelta, timezone
 import re
 import dotenv
 import os
-from config import boto_sess
+from .config import boto_sess
 dotenv.load_dotenv()
 
 def list_s3_objects(s3_url:str):
