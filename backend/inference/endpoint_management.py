@@ -173,7 +173,7 @@ def deploy_endpoint(job_id:str,engine:str,instance_type:str,quantize:str,enable_
                                  )
     except Exception as e:
         logger.error(f"create_endpoint:{e}")
-        return False,''
+        return False,str(e)
     
     return True,endpoint_name
 

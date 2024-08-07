@@ -242,13 +242,18 @@ export const DeployModelModal = ({
               setDisplayNotify(true);
               setNotificationData({ status: 'success', content: `Create Endpoint Name:${res.response.endpoint_name}` });
               setLoading(false);
+            }else{
+              setVisible(false);
+              setDisplayNotify(true);
+              setNotificationData({ status: 'error', content: `Create Endpoint failed:${res.response.endpoint_name}` });
+              setLoading(false);
             }
         
         })
         .catch(err => {
           setDisplayNotify(true);
           setVisible(false);
-          setNotificationData({ status: 'error', content: `Create Endpoint failed` });
+          setNotificationData({ status: 'error', content: `Create Endpoint failed:${err}` });
           setLoading(false);
         })
     }
