@@ -7,7 +7,18 @@
 ```
 -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
-2. 配置Docker中国区镜像
+
+2. 另外，在backend/LLaMA-Factory/requirements.txt文件中
+把原有的  
+```
+unsloth[cu121-torch220] @ git+https://github.com/unslothai/unsloth.git
+```
+替换成： 
+```
+unsloth[cu121-torch220] @ git+https://gitclone.com/github.com/unslothai/unsloth.git
+```
+
+3. 配置Docker中国区镜像
 - 使用vim添加 /etc/docker/daemon.json 文件并添加上下内容
 ```bash
 sudo vim /etc/docker/daemon.json 

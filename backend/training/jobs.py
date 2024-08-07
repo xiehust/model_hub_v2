@@ -130,7 +130,7 @@ def get_sagemaker_training_job_status(job_name):
         response = sagemaker_client.describe_training_job(TrainingJobName=job_name)
         return response['TrainingJobStatus']
     except Exception as e:
-        print(f"Error getting training job status: {str(e)}")
+        logger.info(f"Error getting training job status: {str(e)}")
         return None
     
 
@@ -155,7 +155,7 @@ def get_job_status(job_id:str):
         job_name = results[0][1]
         sm_resp = get_sagemaker_training_job_status(job_name)
         sm_status = map_sagemaker_status_to_job_status(sm_resp)
-        if not sm_status == job_status:
+        if sm_status and not sm_status == job_status :
             database.set_job_status(job_id,sm_status)
             job_status = sm_status
     else:
