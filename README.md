@@ -44,21 +44,6 @@
 ```bash
 git clone --recurse-submodule https://github.com/xiehust/model_hub_v2.git
 ```
-- 保存之后，复制sagemaker execution role的arn，在backend/.env中配置
-复制env.sample 文件，修改里面的内容，并保存为.env
-```bash
-AK=
-SK=
-profile=
-region=us-east-1
-role=arn:aws:iam::
-db_host=127.0.0.1
-db_name=llm
-db_user=llmdata
-db_password=llmdata
-api_keys=
-HUGGING_FACE_HUB_TOKEN=
-```
 
 ## 2.部署前端
 1. 安装nodejs 18
