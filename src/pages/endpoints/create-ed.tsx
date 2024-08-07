@@ -53,11 +53,10 @@ const  INSTANCE_TYPES : SelectProps.Option[] =[
   ]
 
 const ENGINE : RadioGroupProps.RadioButtonDefinition[]= [
+    { label:'HF accelerate(适合大多数模型)',value:'auto'},
     { label:'vllm',value:'vllm'},
     { label:'lmi-dist',value:'lmi-dist'},
     { label:'trt-llm',value:'trt-llm'},
-    { label:'HF accelerate',value:'scheduler'},
-    // { label:'HF accelerate',value:'auto'}
 ]
 
 const defaultData = {
