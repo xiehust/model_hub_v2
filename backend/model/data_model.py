@@ -114,7 +114,7 @@ class DeployModelRequest(BaseModel):
     model_name:Optional[str] = None
     engine:Literal["vllm","scheduler","auto","lmi-dist","trt-llm"]
     instance_type:str
-    quantize:str = ''
+    quantize:Optional[str] = ''
     enable_lora:Optional[bool] = False
     
 class EndpointRequest(BaseModel):

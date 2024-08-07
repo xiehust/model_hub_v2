@@ -118,11 +118,23 @@ def deploy_endpoint(job_id:str,engine:str,instance_type:str,quantize:str,enable_
     }
     if enable_lora:
         env['OPTION_ENABLE_LORA'] = True
+        
     if engine == 'trt-llm':
         env['OPTION_MAX_NUM_TOKENS'] = '50000'
         env['OPTION_ENABLE_KV_CACHE_REUSE'] = "true"
-    if engine == 'vllm':
-        if model_name.startswith('Mistral-7B'): ##Mistral-7B 在g5.2x下kv cache不能超过12k，否则会报错
+        
+    #量化设置
+    if engine == 'scheduler' and quantize in ['bitsandbytes8','bitsandbytes4']:
+        env['OPTION_QUANTIZE'] = quantize
+    elif engine == 'llm-dist' and  quantize in ['awq','gptq']:
+        env['OPTION_QUANTIZE'] = quantize
+    elif engine == 'trt-llm' and  quantize in ['awq','smoothquant']:
+        env['OPTION_QUANTIZE'] = quantize
+    
+    #patches   
+    ##Mistral-7B 在g5.2x下kv cache不能超过12k，否则会报错  
+    if engine == 'vllm' and instance_type.endswith('2xlarge'):
+        if model_name.startswith('Mistral-7B'): 
             env['OPTION_MAX_MODEL_LEN'] = '12288' 
 
     

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT-0
 import React ,{useEffect, useState} from 'react';
 import { Button, Modal, Box, RadioGroup,RadioGroupProps,FormField,
+  Link,
    Toggle,SpaceBetween,Select,SelectProps } from '@cloudscape-design/components';
 import { remotePost } from '../../common/api-gateway';
 
@@ -22,7 +23,11 @@ interface SelectInstanceTypeProps {
     readOnly: boolean;
     // refs?:Record<string,React.RefObject<any>>;
 }
-
+interface SelectQuantTypeProps {
+    data:any;
+    setData: (value: any) => void;
+    readOnly: boolean;
+}
 interface SelectModelProps {
   data:any;
   setData: (value: any) => void;
@@ -34,9 +39,32 @@ const defaultErrors={
     instance_type:null,
     engine:null,
     enable_lora:null,
-    model_name:null
+    model_name:null,
+    quantize:null
 }
 
+const HF_QUANT_TYPES= [
+  {label:"None",value:""},
+  {label:"int8",value:"bitsandbytes8"},
+  {label:"int4",value:"bitsandbytes4"},
+]
+
+const LMI_QUANT_TYPES= [
+  {label:"None",value:""},
+  {label:"awq",value:"awq"},
+  {label:"gptq",value:"gptq"},
+]
+
+const TRT_QUANT_TYPES= [
+  {label:"None",value:""},
+  {label:"awq",value:"awq"},
+  {label:"smoothquant",value:"smoothquant"},
+]
+
+const vLLM_QUANT_TYPES= [
+  {label:"None",value:""},
+  {label:"awq",value:"awq"},
+]
 
 const  INSTANCE_TYPES : SelectProps.Option[] =[
     { label: 'ml.g4dn.2xlarge', value: 'ml.g4dn.2xlarge' },
@@ -53,17 +81,19 @@ const  INSTANCE_TYPES : SelectProps.Option[] =[
   ]
 
 const ENGINE : RadioGroupProps.RadioButtonDefinition[]= [
-    { label:'HF accelerate(适合大多数模型)',value:'auto'},
+    { label:'Auto',value:'auto'},
     { label:'vllm',value:'vllm'},
     { label:'lmi-dist',value:'lmi-dist'},
     { label:'trt-llm',value:'trt-llm'},
+    { label:'HF accelerate',value:'scheduler'},
 ]
 
 const defaultData = {
     instance_type:'ml.g5.2xlarge',
-    engine:'vllm',
+    engine:'auto',
     enable_lora:false,
-    model_name:undefined
+    model_name:undefined,
+    quantize:''
   }
 
   const SelectModelName = ({ data, setData, readOnly }:SelectModelProps) => {
@@ -141,6 +171,25 @@ const SelectInstanceType = ({ data, setData, readOnly }:SelectInstanceTypeProps)
             setValue(detail.value);
           setData((pre:any) => ({...pre, engine: detail.value }))
 
+        }}
+      />
+    )
+  }
+
+  const SetQuantType = ({  data, setData, readOnly }:SelectQuantTypeProps)  => {
+    const quant_types = data?.engine === 'scheduler' ? 
+                        HF_QUANT_TYPES : data?.engine === 'vllm' ? 
+                        vLLM_QUANT_TYPES : data?.engine == 'trt-llm'?
+                        TRT_QUANT_TYPES: LMI_QUANT_TYPES;
+    const [value,setValue] = useState <string|null> (quant_types[0].value);
+    return (
+      <RadioGroup
+        items={quant_types}
+        readOnly={readOnly}
+        value={value}
+        onChange={({ detail }) => {
+            setValue(detail.value);
+          setData((pre:any) => ({...pre, quantize: detail.value }))
         }}
       />
     )
@@ -243,10 +292,21 @@ export const DeployModelModal = ({
             label="Engine Type"
             stretch={false}
             errorText={errors.engine}
+            description={<Link href='https://docs.djl.ai/docs/serving/serving/docs/lmi/user_guides/vllm_user_guide.html' external>各类引擎支持模型信息</Link>}
             i18nStrings={{ errorIconAriaLabel: 'Error' }}
           >
             <SetEngineType data={data} setData={setData} readOnly={false}/>
           </FormField>
+
+          {data.engine !== 'auto' && <FormField
+            label="Quantize"
+            description="Select Quantize type to deploy the model."
+            stretch={false}
+            errorText={errors.quantize}
+            i18nStrings={{ errorIconAriaLabel: 'Error' }}
+          >
+            <SetQuantType data={data} setData={setData} readOnly={false} />
+          </FormField>}
 
           {/* <FormField
             label="Enable Lora Adapter"
