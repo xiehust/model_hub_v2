@@ -4,6 +4,7 @@ from datetime import timedelta, timezone
 import re
 import dotenv
 import os
+from config import boto_sess
 dotenv.load_dotenv()
 
 def list_s3_objects(s3_url:str):
@@ -17,10 +18,10 @@ def list_s3_objects(s3_url:str):
     prefix = match.group(2)
 
     # Initialize S3 client
-    boto_sess = boto3.Session(
-        profile_name=os.environ.get('profile'),
-        region_name=os.environ.get('region')
-    )
+    # boto_sess = boto3.Session(
+    #     profile_name=os.environ.get('profile'),
+    #     region_name=os.environ.get('region')
+    # )
 
     s3_client = boto_sess.client('s3')
 
