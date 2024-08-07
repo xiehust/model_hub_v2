@@ -151,7 +151,7 @@ const ExpandableSettingPanel = () => {
               setepSelectedOption(detail.selectedOption);
               setEndpointName(detail.selectedOption.value);
 
-              setModelName(detail.selectedOption.tags&&detail.selectedOption.tags[0]);
+              setModelName(detail.selectedOption.tags&&detail.selectedOption.tags[1]);
             }}
             options={endpointsInfo.map( (item) => ({label:item.endpoint_name,
               value:item.endpoint_name,
