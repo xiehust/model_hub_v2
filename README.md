@@ -1,3 +1,6 @@
+# Model Hub
+Model Hub V2是提供一站式的模型微调，部署，调试的无代码可视化平台，可以帮助用户快速验证微调各类开源模型的效果，方便用户快速实验和决策，降低用户微调大模型的门槛。详情请见[飞书使用说明](https://amzn-chn.feishu.cn/docx/QniUdr7FroxShfxeoPacLJKtnXf)
+
 ## 1.环境安装
 - 硬件需求：一台ec2 Instance, m5.xlarge, 200GB EBS storage
 - os需求：ubuntu 22.04
