@@ -111,7 +111,7 @@ class DatabaseWrapper(BaseModel):
     def get_jobs_status_by_id(self, id: str):
         with self.connection_pool.get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute(f"SELECT job_status,job_name FROM {JOB_TABLE} WHERE job_id = %s", (id,))
+                cursor.execute(f"SELECT job_status,job_run_name FROM {JOB_TABLE} WHERE job_id = %s", (id,))
                 return cursor.fetchall()
 
     def set_job_status(self, job_id: str, status: JobStatus):
