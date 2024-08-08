@@ -11,14 +11,19 @@ from model.data_model import *
 from db_management.database import DatabaseWrapper
 from datetime import datetime
 from training.jobs import sync_get_job_by_id
-from utils.config import boto_sess,role,default_bucket,sagemaker_session,DEFAULT_ENGINE,DEFAULT_REGION
+from utils.config import boto_sess,role,sagemaker_session,DEFAULT_REGION,SUPPORTED_MODELS_FILE,DEFAULT_TEMPLATE_FILE
 from utils.get_factory_config import get_model_path_by_name
+from utils.llamafactory.extras.constants import register_model_group,DownloadSource,DEFAULT_TEMPLATE,SUPPORTED_MODELS
+from collections import OrderedDict, defaultdict
 from sagemaker import image_uris, Model
 import sagemaker
+import pickle
 from logger_config import setup_logger
 import threading
 database = DatabaseWrapper()
 logger = setup_logger('endpoint_management.py', log_file='deployment.log', level=logging.INFO)
+
+
 
 endpoints_lock = threading.Lock()
 thread_pool = {}
@@ -85,9 +90,26 @@ def delete_endpoint(endpoint_name:str) ->bool:
     except Exception as e:
         logger.error(e)
         return True
-        
+
+def register_cust_model(cust_repo_type:str,cust_repo_addr:str):
+    model_name = cust_repo_addr.split('/')[1]
+    repo_type = DownloadSource.DEFAULT if  cust_repo_type == 'hf' else DownloadSource.MODELSCOPE
+    register_model_group(
+        models={
+            model_name: {
+                repo_type : cust_repo_addr,
+            }
+        },
+    )
+    #register_model_group会改变以下2个对象，需要持久化保存，服务器重启之后仍然能加载
+    with open(SUPPORTED_MODELS_FILE, 'wb') as f:
+        pickle.dump(SUPPORTED_MODELS, f)
+    with open(DEFAULT_TEMPLATE_FILE, 'wb') as f:
+        pickle.dump(DEFAULT_TEMPLATE, f)
+    
 # 如果job_id="",则使用model_name原始模型
-def deploy_endpoint(job_id:str,engine:str,instance_type:str,quantize:str,enable_lora:bool,model_name:str) -> Dict[bool,str]:
+def deploy_endpoint(job_id:str,engine:str,instance_type:str,quantize:str,enable_lora:bool,model_name:str,cust_repo_type:str,cust_repo_addr:str) -> Dict[bool,str]:
+    #如果是部署微调后的模型
     if not job_id == 'N/A(Not finetuned)':
         jobinfo = sync_get_job_by_id(job_id)
         if not jobinfo.job_status == JobStatus.SUCCESS:
@@ -98,8 +120,17 @@ def deploy_endpoint(job_id:str,engine:str,instance_type:str,quantize:str,enable_
         else:
             model_path = jobinfo.output_s3_path + 'finetuned_model/'
         model_name = jobinfo.job_payload["model_name"]
+    #如果是使用原始模型
     elif not model_name == '':
         model_path = get_model_path_by_name(model_name)
+    #如果是使用自定义模型
+    elif not cust_repo_addr == '' and model_name == '' :
+        model_path = cust_repo_addr
+        model_name = cust_repo_addr.split('/')[1]
+        
+        #注册到supported_model中
+        register_cust_model(cust_repo_type=cust_repo_type,cust_repo_addr=cust_repo_addr)
+        
     else:
         return CommonResponse(response_id=job_id,response={"error": "no model_name is provided"})
     logger.info(f"deploy endpoint with model_path:{model_path}")

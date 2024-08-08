@@ -111,11 +111,13 @@ class S3ObjectsResponse(BaseModel):
     
 class DeployModelRequest(BaseModel):
     job_id:str
-    model_name:Optional[str] = None
+    model_name:Optional[str] = ''
     engine:Literal["vllm","scheduler","auto","lmi-dist","trt-llm"]
     instance_type:str
     quantize:Optional[str] = ''
     enable_lora:Optional[bool] = False
+    cust_repo_type:Optional[str] = ''
+    cust_repo_addr:Optional[str] = ''
     
 class EndpointRequest(BaseModel):
     endpoint_name:str
