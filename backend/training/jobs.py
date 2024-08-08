@@ -151,10 +151,14 @@ def get_job_status(job_id:str):
     job_status = None
     if results:
         job_status = results[0][0]
+        print('job_status:',job_status)
         job_name = results[0][1]
         sm_resp = get_sagemaker_training_job_status(job_name)
+        # print('sm_resp',sm_resp)
         sm_status = map_sagemaker_status_to_job_status(sm_resp)
-        if sm_status and not sm_status == job_status :
+        print('sm_job_status',sm_status)
+        if sm_status and not sm_status.value == job_status :
+            print('set_job_status',sm_status)
             database.set_job_status(job_id,sm_status)
             job_status = sm_status
     else:
