@@ -19,8 +19,8 @@ export const FT_OPTIONS = [
 ]
 
 export const TRAINING_PRECISION = [
-  { label: 'fp16', value: 'fp16' },
   { label: 'bf16', value: 'bf16' },
+  { label: 'fp16', value: 'fp16' },
   { label: 'fp32', value: 'fp32' },
   { label: 'pure_fp16', value: 'pure_fp16' },
 ]

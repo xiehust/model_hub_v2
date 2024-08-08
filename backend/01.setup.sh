@@ -14,8 +14,8 @@ pip install -r requirements.txt
 
 # 安装Docker
 sudo apt-get update
-sudo apt install docker python3-pip git -y && pip3 install -U awscli && pip install pyyaml==5.3.1
-sudo apt install docker-ce docker-ce-cli containerd.io -y
+sudo apt install python3-pip git -y && pip3 install -U awscli && pip install pyyaml==5.3.1
+sudo apt install docker.io -y
 # Configure components
 sudo systemctl enable docker && sudo systemctl start docker && sudo usermod -aG docker $USER
 

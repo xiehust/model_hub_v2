@@ -17,7 +17,7 @@ from utils.get_factory_config import get_model_path_by_name
 from utils.llamafactory.extras.constants import DEFAULT_TEMPLATE
 import dotenv
 import os
-from utils.config import boto_sess,role,default_bucket,sagemaker_session,LORA_BASE_CONFIG,DEEPSPEED_BASE_CONFIG_MAP,FULL_BASE_CONFIG
+from utils.config import boto_sess,role,default_bucket,sagemaker_session,LORA_BASE_CONFIG,DEEPSPEED_BASE_CONFIG_MAP,FULL_BASE_CONFIG,DEFAULT_REGION
 dotenv.load_dotenv()
 
 logger = setup_logger('training_job.py', log_file='processing_engine.log', level=logging.INFO)
@@ -113,6 +113,23 @@ class TrainingJobExcutor(BaseModel):
         else:
             doc['flash_attn'] = 'auto'
             
+        #训练精度
+        if job_payload['training_precision'] == 'bf16':
+            doc.pop('fp16', None)
+            doc.pop('pure_bf16', None)
+            doc['bf16'] = True
+        elif job_payload['training_precision'] == 'fp16':
+            doc.pop('bf16', None)
+            doc.pop('pure_bf16', None)
+            doc['fp16'] = True
+        elif job_payload['training_precision'] == 'pure_bf16':
+            doc.pop('bf16', None)
+            doc.pop('bf16', None)
+            doc['pure_bf16'] = True
+        elif job_payload['training_precision'] == 'fp32':
+            doc.pop('bf16', None)
+            doc.pop('bf16', None)
+            doc.pop('pure_bf16', None)
             
         doc['optim'] = job_payload['optimizer']
         
@@ -177,7 +194,8 @@ class TrainingJobExcutor(BaseModel):
             "merge_lora":merge_lora,
             "sg_config":sg_config,
             "sg_lora_merge_config":sg_lora_merge_config,
-            'OUTPUT_MODEL_S3_PATH': output_s3_path, # destination
+            'OUTPUT_MODEL_S3_PATH': output_s3_path, # destination 
+            "PIP_INDEX":'https://pypi.tuna.tsinghua.edu.cn/simple' if DEFAULT_REGION.startswith('cn') else ''
         }
         entry_point = 'entry_single_lora.py' if instance_num == 1 else 'entry-multi-nodes.py'
         self.output_s3_path = output_s3_path
@@ -192,7 +210,7 @@ class TrainingJobExcutor(BaseModel):
                                     script_mode=True,
                                     instance_count=instance_num,
                                     instance_type=instance_type,
-                                    enable_remote_debug=True,
+                                    # enable_remote_debug=True,
                                     # keep_alive_period_in_seconds=600,
                                     max_run=max_time)
         
@@ -224,7 +242,8 @@ class TrainingJobExcutor(BaseModel):
         prepare_dataset_info(dataset_info)
         
         #model_id参数
-        model_id=get_model_path_by_name(job_payload['model_name'])
+        repo = 'ms' if DEFAULT_REGION.startswith('cn') else 'hf'
+        model_id=get_model_path_by_name(job_payload['model_name'],repo)
         
         if job_payload['stage'] == 'sft':
             sg_config,sg_lora_merge_config= self.create_training_yaml(

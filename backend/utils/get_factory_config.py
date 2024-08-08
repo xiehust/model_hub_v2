@@ -45,12 +45,12 @@ def list_datasets(dataset_dir: str = None, training_stage: str = list(TRAINING_S
     datasets = [k for k, v in dataset_info.items() if v.get("ranking", False) == ranking]
     return datasets  
 
-def get_model_path_by_name(name:str) -> str:
-    return SUPPORTED_MODELS[name]['hf']
+def get_model_path_by_name(name:str,repo='hf') -> str:
+    return SUPPORTED_MODELS[name][repo]
             
-async def get_factory_config(request:GetFactoryConfigRequest) ->CommonResponse:
+async def get_factory_config(request:GetFactoryConfigRequest,repo='hf') ->CommonResponse:
     if request.config_name == 'model_name':
-        model_names = [{"model_name":name,"model_path":SUPPORTED_MODELS[name]['hf']} for name in list(SUPPORTED_MODELS.keys())]
+        model_names = [{"model_name":name,"model_path":SUPPORTED_MODELS[name][repo]} for name in list(SUPPORTED_MODELS.keys())]
         return CommonResponse(response_id=str(uuid.uuid4()),response={"body":model_names})
     elif request.config_name == 'prompt_template':
         templates = list(DEFAULT_TEMPLATE.keys())
