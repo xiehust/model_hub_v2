@@ -17,7 +17,7 @@ from utils.get_factory_config import get_model_path_by_name
 from utils.llamafactory.extras.constants import DEFAULT_TEMPLATE
 import dotenv
 import os
-from utils.config import boto_sess,role,default_bucket,sagemaker_session,LORA_BASE_CONFIG,DEEPSPEED_BASE_CONFIG_MAP,FULL_BASE_CONFIG
+from utils.config import boto_sess,role,default_bucket,sagemaker_session,LORA_BASE_CONFIG,DEEPSPEED_BASE_CONFIG_MAP,FULL_BASE_CONFIG,DEFAULT_REGION
 dotenv.load_dotenv()
 
 logger = setup_logger('training_job.py', log_file='processing_engine.log', level=logging.INFO)
@@ -177,7 +177,8 @@ class TrainingJobExcutor(BaseModel):
             "merge_lora":merge_lora,
             "sg_config":sg_config,
             "sg_lora_merge_config":sg_lora_merge_config,
-            'OUTPUT_MODEL_S3_PATH': output_s3_path, # destination
+            'OUTPUT_MODEL_S3_PATH': output_s3_path, # destination 
+            "PIP_INDEX":'https://pypi.tuna.tsinghua.edu.cn/simple' if DEFAULT_REGION.startswith('cn') else None
         }
         entry_point = 'entry_single_lora.py' if instance_num == 1 else 'entry-multi-nodes.py'
         self.output_s3_path = output_s3_path
