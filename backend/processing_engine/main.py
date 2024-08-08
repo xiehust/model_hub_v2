@@ -28,9 +28,7 @@ def get_submitted_jobs():
     results = database.get_jobs_by_status(JobStatus.SUBMITTED)
     return [ret[0] for ret in results]
 
-def proccessing_job(job_id:str):
-    
-    logger.info("start process job:", job_id)
+def proccessing_job(job_id:str):    
     logger.info(f"creating job:{job_id}")
     job = JobStateMachine.create(job_id)
 
@@ -46,7 +44,7 @@ def proccessing_job(job_id:str):
         return 
 
     job_status = get_job_status(job_id)
-    logger.info(f"finish running job:{job_id}")
+    logger.info(f"finish running job:{job_id} with status:{job_status}")
     job.transition(job_status)
     # job.transition(JobStatus.SUCCESS)
     return True

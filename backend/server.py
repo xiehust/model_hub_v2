@@ -27,6 +27,8 @@ from utils.outputs import list_s3_objects
 from inference.endpoint_management import deploy_endpoint,delete_endpoint,get_endpoint_status,list_endpoints
 from inference.serving import inference
 from users.login import login_auth
+from utils.config import DEFAULT_REGION
+
 
 dotenv.load_dotenv()
 logger = setup_logger('server.py', log_file='server.log', level=logging.INFO)
@@ -117,7 +119,9 @@ async def handel_list_jobs(request:ListJobsRequest):
 
 @app.post("/v1/get_factory_config",dependencies=[Depends(check_api_key)])
 async def get_llama_factory_config(request:GetFactoryConfigRequest):
-    resp = await get_factory_config(request)
+    # 中国区从modelscope下载模型
+    repo = 'ms' if DEFAULT_REGION.startswith('cn') else 'hf'
+    resp = await get_factory_config(request,repo)
     return resp
 
 @app.post("/v1/get_job",dependencies=[Depends(check_api_key)])
