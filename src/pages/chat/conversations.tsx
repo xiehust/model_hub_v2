@@ -83,10 +83,11 @@ export interface MsgItemProps {
   id: string;
 };
 
+const username = 'default'
+const sessionId = `web_chat_${username}`
+
 const MsgItem = ({ who, text, images_base64, images, id }: MsgItemProps) => {
 
-  const username = 'default'
-  const sessionId = `web_chat_${username}`
 
   //restore image file from localstorage
   if (images_base64) {
@@ -410,6 +411,11 @@ const ConversationsPanel = () => {
           content: streamOutput.current,
         },
       ]);
+      setLocalStoredMsgItems([
+        ...msgItems,
+        { id: resp.id, who: username, text: streamOutput.current },
+      ]);
+
     }else{
 
       const chunk = resp.choices[0].delta.content??'';
@@ -458,6 +464,10 @@ const ConversationsPanel = () => {
           role: BOTNAME,
           content: streamOutput.current,
         },
+      ]);
+      setLocalStoredMsgItems([
+        ...msgItems,
+        { id: resp.id, who: username, text: streamOutput.current },
       ]);
   }
 
