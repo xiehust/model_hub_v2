@@ -330,12 +330,12 @@ const PromptPanel = ({ sendMessage }:{sendMessage:({id,messages,params}:MessageD
     ]);
 
     //save the messages to localstorage
-    // console.log(msgItems);
+
     setLocalStoredMsgItems([
       ...msgItems,
       { id: respid, who: username, text: prompt },
     ])
-
+    console.log(msgItems);
     setConversations((prev:MsgItemProps[]) => [...prev, { role: "user", content: prompt }]);
     const messages = [...conversations, { role: "user", content: prompt }];
     setLoading(true);
