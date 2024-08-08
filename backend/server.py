@@ -177,7 +177,14 @@ async def handle_list_s3_path(request:ListS3ObjectsRequest):
 @app.post('/v1/deploy_endpoint',dependencies=[Depends(check_api_key)])
 async def handle_deploy_endpoint(request:DeployModelRequest):
     logger.info(request)
-    ret,msg = deploy_endpoint(job_id=request.job_id,engine=request.engine,instance_type=request.instance_type,quantize=request.quantize,enable_lora=request.enable_lora,model_name=request.model_name)
+    ret,msg = deploy_endpoint(job_id=request.job_id,
+                              engine=request.engine,
+                              instance_type=request.instance_type,
+                              quantize=request.quantize,
+                              enable_lora=request.enable_lora,
+                              cust_repo_type=request.cust_repo_type,
+                              cust_repo_addr=request.cust_repo_addr,
+                              model_name=request.model_name)
     
     return CommonResponse(response_id=str(uuid.uuid4()),response={"result":ret, "endpoint_name": msg})
 

@@ -2,6 +2,8 @@ import dotenv
 import boto3
 import os
 import sagemaker
+import utils.llamafactory.extras.constants as extras
+import pickle
 
 dotenv.load_dotenv()
 print(os.environ)
@@ -9,7 +11,8 @@ QLORA_BASE_CONFIG = './LLaMA-Factory/examples/train_qlora/llama3_lora_sft_bitsan
 LORA_BASE_CONFIG = './LLaMA-Factory/examples/train_lora/llama3_lora_sft.yaml'
 FULL_BASE_CONFIG = './LLaMA-Factory/examples/train_full/llama3_full_sft_ds3.yaml'
 DATASET_INFO_FILE = './LLaMA-Factory/data/dataset_info.json'
-
+SUPPORTED_MODELS_FILE = './utils/supported_models.pkl'
+DEFAULT_TEMPLATE_FILE = './utils/default_template.pkl'
 
 # HuggingFace Accelerate, use "scheduler" if deploying a text-generation model, and "disable" for other tasks (can also the config omit entirely)
 DEFAULT_ENGINE='vllm'#'scheduler'
@@ -28,12 +31,6 @@ else :
         region_name=DEFAULT_REGION
     )
     
-# print(f"region:{boto_sess.region_name}")
-
-# default_role  = sagemaker.get_execution_role()
-# print(f"default_role:{default_role}")
-
-# role = os.environ.get('role') if os.environ.get('role') else default_role
 role = os.environ.get('role')
 print(f"sagemaker role:{role}")
 
@@ -53,6 +50,17 @@ EP_TABLE = 'EP_TABLE'
 USER_TABLE= 'USER_TABLE'
 DEEPSPEED_BASE_CONFIG_MAP = { "stage_2":'examples/deepspeed/ds_z2_config.json',
                              "stage_3":'examples/deepspeed/ds_z3_config.json'}
+
+# 加载持久化之后的模型列表
+try:
+    with open(SUPPORTED_MODELS_FILE, 'rb') as f:
+        extras.SUPPORTED_MODELS = pickle.load(f)
+        
+    with open(DEFAULT_TEMPLATE_FILE, 'rb') as f:
+        extras.DEFAULT_TEMPLATE = pickle.load(f)
+
+except Exception as e:
+    print(e) 
 
 
 

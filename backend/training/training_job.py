@@ -195,7 +195,9 @@ class TrainingJobExcutor(BaseModel):
             "sg_config":sg_config,
             "sg_lora_merge_config":sg_lora_merge_config,
             'OUTPUT_MODEL_S3_PATH': output_s3_path, # destination 
-            "PIP_INDEX":'https://pypi.tuna.tsinghua.edu.cn/simple' if DEFAULT_REGION.startswith('cn') else ''
+            "PIP_INDEX":'https://pypi.tuna.tsinghua.edu.cn/simple' if DEFAULT_REGION.startswith('cn') else '',
+            "USE_MODELSCOPE_HUB": "1" if DEFAULT_REGION.startswith('cn') else '0'
+            
         }
         entry_point = 'entry_single_lora.py' if instance_num == 1 else 'entry-multi-nodes.py'
         self.output_s3_path = output_s3_path

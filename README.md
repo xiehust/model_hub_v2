@@ -40,7 +40,12 @@
 }
 ```
 - ssh 到ec2 instance
-注意使用--recurse-submodule下载代码  
+
+- 如果是中国区，请先设置git代理
+```bash
+git config --global url."https://gitclone.com/".insteadOf https://
+```
+- 使用--recurse-submodule下载代码  
 ```bash
 git clone --recurse-submodule https://github.com/xiehust/model_hub_v2.git
 ```

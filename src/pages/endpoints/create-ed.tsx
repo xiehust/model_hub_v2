@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT-0
 import React ,{useEffect, useState} from 'react';
 import { Button, Modal, Box, RadioGroup,RadioGroupProps,FormField,
-  Link,
+  Link,Input,ColumnLayout,
    Toggle,SpaceBetween,Select,SelectProps } from '@cloudscape-design/components';
 import { remotePost } from '../../common/api-gateway';
 
@@ -93,7 +93,9 @@ const defaultData = {
     engine:'auto',
     enable_lora:false,
     model_name:undefined,
-    quantize:''
+    quantize:'',
+    cust_repo_type:'hf',
+    cust_repo_addr:''
   }
 
   const SelectModelName = ({ data, setData, readOnly }:SelectModelProps) => {
@@ -173,6 +175,45 @@ const SelectInstanceType = ({ data, setData, readOnly }:SelectInstanceTypeProps)
 
         }}
       />
+    )
+  }
+
+  const InputCustRepo = ({  data, setData, readOnly }:SelectQuantTypeProps)  => {
+    const [value,setValue] = useState <string> ('');
+    const [typeValue,setTypeValue] = useState <string> ('hf');
+    return (
+      <SpaceBetween size='xs'>
+        {/* <FormField
+            description="国内区域推荐使用魔搭社区"
+            stretch={false}
+          >
+      <RadioGroup
+      readOnly={readOnly}
+      onChange={({ detail }) => {
+        setTypeValue(detail.value);
+        setData((pre:any) => ({...pre, cust_repo_type: detail.value }))
+    }}
+      value={typeValue}
+      items={[
+        { value: "hf", label: "HuggingFace" },
+        { value: "ms", label: "魔搭社区" },
+      ]}
+    /></FormField> */}
+     <FormField
+            description="输入HuggingFace Repo地址,例如:unsloth/llama-3-8b-Instruct"
+            stretch={true}
+          >
+      <Input
+        readOnly={readOnly}
+        value={value}
+        placeholder='Huggingface repo format'
+        onChange={({ detail }) => {
+            setValue(detail.value);
+          setData((pre:any) => ({...pre, cust_repo_addr: detail.value }))
+        }}
+      />
+      </FormField>
+      </SpaceBetween>
     )
   }
 
@@ -284,6 +325,13 @@ export const DeployModelModal = ({
           </FormField>
 
           <FormField
+            label="自定义模型仓库"
+            stretch={false}
+          >
+            <InputCustRepo data={data} setData={setData} readOnly={modelNameReadOnly}/>
+          </FormField> 
+          
+          <FormField
             label="Instance Type"
             description="Select a Instance type to deploy the model."
             stretch={false}
@@ -312,6 +360,8 @@ export const DeployModelModal = ({
           >
             <SetQuantType data={data} setData={setData} readOnly={false} />
           </FormField>}
+
+
 
           {/* <FormField
             label="Enable Lora Adapter"
