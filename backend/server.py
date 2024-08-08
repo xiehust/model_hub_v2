@@ -161,7 +161,8 @@ async def handle_fetch_training_log(request:FetchLogRequest):
 @app.post("/v1/get_job_status",dependencies=[Depends(check_api_key)])
 async def handle_get_job_status(request:GetJobsRequest):
     logger.info(request.json())
-    resp = get_job_status(request.job_id)
+    job_status = get_job_status(request.job_id)
+    resp = JobStatusResponse(response_id=str(uuid.uuid4()), job_status=JobStatus(job_status))
     return resp
 
 @app.post("/v1/list_s3_path",dependencies=[Depends(check_api_key)])

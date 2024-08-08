@@ -19,7 +19,7 @@ from job_state_machine import JobStateMachine
 from db_management.database import DatabaseWrapper
 import threading
 from logger_config import setup_logger
-
+from training.jobs import get_job_status
 logger = setup_logger('main.py', log_file='processing_engine.log', level=logging.INFO)
 
 database = DatabaseWrapper()
@@ -45,8 +45,10 @@ def proccessing_job(job_id:str):
         logger.info(f"RUNNING job failed:{job_id}")
         return 
 
+    job_status = get_job_status(job_id)
     logger.info(f"finish running job:{job_id}")
-    job.transition(JobStatus.SUCCESS)
+    job.transition(job_status)
+    # job.transition(JobStatus.SUCCESS)
     return True
 
 def start_processing_engine():

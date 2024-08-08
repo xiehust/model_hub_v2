@@ -160,8 +160,7 @@ def get_job_status(job_id:str):
     else:
         raise Exception(f"Job {job_id} not found")
     
-    resp = JobStatusResponse(response_id=str(uuid.uuid4()), job_status=JobStatus(job_status))
-    return resp
+    return job_status
 
 
     
