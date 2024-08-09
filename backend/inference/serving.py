@@ -3,10 +3,10 @@ from sagemaker import serializers, deserializers
 import json
 import logging
 from typing import Annotated, Sequence, TypedDict, Dict, Optional,List, Any,TypedDict
-from utils.config import boto_sess,role,default_bucket,sagemaker_session,DEFAULT_ENGINE,DEFAULT_REGION
-import asyncio
+from utils.config import sagemaker_session,DEFAULT_REGION
 from inference.model_utils import *
 from utils.get_factory_config import get_model_path_by_name
+from utils.llamafactory.extras.constants import DownloadSource
 import os 
 from logger_config import setup_logger
 logger = setup_logger('serving.py', log_file='deployment.log', level=logging.INFO)
@@ -69,7 +69,8 @@ def inference(endpoint_name:str,model_name:str, messages:List[Dict[str,Any]],par
     如果stream为False，返回推理的结果列表。
     如果stream为True，返回处理流式推理输出的函数。
     """
-    model_path = get_model_path_by_name(model_name)
+    repo = DownloadSource.MODELSCOPE if DEFAULT_REGION.startswith('cn') else DownloadSource.DEFAULT
+    model_path = get_model_path_by_name(model_name,repo)
     model_args = {'cache_dir':'./cache',
                   "revision":None,
                   "model_name_or_path":model_path,

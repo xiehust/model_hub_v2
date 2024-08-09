@@ -1,5 +1,10 @@
-from transformers import  PreTrainedTokenizerBase,AutoTokenizer
 from typing import Annotated, Sequence, TypedDict, Dict, Optional,List, Any,TypedDict
+from utils.config import DEFAULT_REGION
+
+if DEFAULT_REGION.startswith('cn'):
+    from modelscope import  AutoTokenizer
+else:
+    from transformers import  AutoTokenizer
 
 from logger_config import setup_logger
 import logging

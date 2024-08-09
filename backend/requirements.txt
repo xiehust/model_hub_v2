@@ -13,3 +13,4 @@ sagemaker
 transformers
 PyJWT
 sentencepiece
+modelscope
