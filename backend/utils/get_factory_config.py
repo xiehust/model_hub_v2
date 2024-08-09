@@ -9,7 +9,7 @@ import asyncio
 from typing import Annotated, Sequence, TypedDict, Dict, Optional,List, Any,TypedDict
 
 from model.data_model import CommonResponse,ListModelNamesResponse,GetFactoryConfigRequest
-from utils.llamafactory.extras.constants import SUPPORTED_MODELS,DEFAULT_TEMPLATE,TRAINING_STAGES,DATA_CONFIG,STAGES_USE_PAIR_DATA
+from utils.llamafactory.extras.constants import SUPPORTED_MODELS,DEFAULT_TEMPLATE,TRAINING_STAGES,DATA_CONFIG,STAGES_USE_PAIR_DATA,DownloadSource
 DEFAULT_DATA_DIR = 'utils/llamafactory/data'
 logger = logging.getLogger()
 # print(os.listdir())
@@ -45,10 +45,10 @@ def list_datasets(dataset_dir: str = None, training_stage: str = list(TRAINING_S
     datasets = [k for k, v in dataset_info.items() if v.get("ranking", False) == ranking]
     return datasets  
 
-def get_model_path_by_name(name:str,repo='hf') -> str:
+def get_model_path_by_name(name:str,repo=DownloadSource.DEFAULT) -> str:
     return SUPPORTED_MODELS[name][repo]
             
-async def get_factory_config(request:GetFactoryConfigRequest,repo='hf') ->CommonResponse:
+async def get_factory_config(request:GetFactoryConfigRequest,repo=DownloadSource.DEFAULT) ->CommonResponse:
     if request.config_name == 'model_name':
         model_names = [{"model_name":name,"model_path":SUPPORTED_MODELS[name][repo]} for name in list(SUPPORTED_MODELS.keys())]
         return CommonResponse(response_id=str(uuid.uuid4()),response={"body":model_names})
