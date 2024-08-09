@@ -46,11 +46,11 @@ def list_datasets(dataset_dir: str = None, training_stage: str = list(TRAINING_S
     return datasets  
 
 def get_model_path_by_name(name:str,repo=DownloadSource.DEFAULT) -> str:
-    return SUPPORTED_MODELS[name][repo]
+    return SUPPORTED_MODELS[name].get(repo,'not exist')
             
 async def get_factory_config(request:GetFactoryConfigRequest,repo=DownloadSource.DEFAULT) ->CommonResponse:
     if request.config_name == 'model_name':
-        model_names = [{"model_name":name,"model_path":SUPPORTED_MODELS[name][repo]} for name in list(SUPPORTED_MODELS.keys())]
+        model_names = [{"model_name":name,"model_path":SUPPORTED_MODELS[name].get(repo,'not exist')} for name in list(SUPPORTED_MODELS.keys())]
         return CommonResponse(response_id=str(uuid.uuid4()),response={"body":model_names})
     elif request.config_name == 'prompt_template':
         templates = list(DEFAULT_TEMPLATE.keys())
