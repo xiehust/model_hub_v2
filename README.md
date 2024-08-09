@@ -36,7 +36,7 @@ Model Hub V2是提供一站式的模型微调，部署，调试的无代码可�
                 "s3:ListBucket"
             ],
             "Resource": [
-                "arn:aws:s3:::sagemaker*"
+                "arn:aws:s3:::*"
             ]
         }
     ]
